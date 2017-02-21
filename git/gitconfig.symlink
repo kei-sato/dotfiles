@@ -31,6 +31,7 @@
 	lg = !"git lg1"
 	lg1 = log --graph --abbrev-commit --decorate --date=relative --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
 	lg2 = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)' --all
+	lg3 ="git log --graph --pretty=format:'%Cred%h%Creset %an: %s - %Creset %C(yellow)%d%Creset %Cgreen(%cr)%Creset' --abbrev-commit --date=relative"
 	logp = log -p --ignore-all-space --reverse
 	ls = branch --list
 	# Merge GitHub pull request on top of the current branch or,
@@ -57,7 +58,7 @@
 	remotes = remote -v
 	retag = "!r() { git tag -d $1 && git push origin :refs/tags/$1 && git tag $1; }; r"
 	ri = rebase -i
-	s = status -s
+	s = status -sb
 	sal = !"git sla" # accept mistyping
 	st = status
 	tags = tag -l
