@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# reverse arp
+
+USAGE='
+Example:
+rarp 00:0a:95:9d:68:16
+=> 192.168.0.253
+'
+
+abort() {
+  [[ $# -gt 0 ]] && echo "$@"
+  echo "$USAGE" 1>&2
+  exit 1
+}
+
+IS_VERBOSE=false
+
+while getopts hxv option; do
+  case $option in
+    x) set -x;;
+    v) IS_VERBOSE=true;;
+    h|\?) abort;;
+  esac
+done
+[[ $OPTIND -gt 1 ]] && shift $((OPTIND - 1))
+
+[[ $# -lt 1 ]] && abort "MAC address not found"
+
+[[ $(echo "$1" | tr ":" "\n" | wc -l) -ne 6 ]] && abort "invalid MAC address: $1"
+
+MAC=$(sed -e "s/^0//" -e "s/:0/:/g" <<< "$1")
+
+if OUTPUT=$(arp -an | grep "$MAC"); then
+  if $IS_VERBOSE; then
+    echo "$OUTPUT"
+  else
+    awk '{print $2}' <<< "$OUTPUT" | tr -d "()"
+  fi
+else
+  echo "not found ip address of $MAC" 2>&1
+  exit 1
+fi

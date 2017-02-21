@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# https://jwt.io/
+
+USAGE='usage:
+  - simple
+  echo -n "foo" | jwt-sign "key"
+
+  - run through
+    echo -n "$(echo '\''{"alg": "HS256","typ": "JWT"}'\'' | jwt-base64).$(echo '\''{"payload":1}'\'' | jwt-base64)" | jwt-sign "secret"
+'
+
+abort() {
+  [[ $# -gt 0 ]] && echo "$@"
+  echo "$USAGE" 1>&2
+  exit 1
+}
+
+[[ $# -lt 1 ]] && abort
+
+openssl dgst -sha256 -binary -hmac "$1" /dev/stdin | openssl base64 | tr -d '=' | tr '/' '_' | tr '+' '-'

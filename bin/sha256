@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Example:
+# sha256 aabbcc
+# echo -n aabbcc | sha256
+# sha256 <(echo -n aabbcc)
+if [[ $# -eq 0 || -f "$1" ]]; then
+  cat "${1:-/dev/stdin}"
+else
+  echo -n "$@"
+fi | shasum -a256 | cut -c -64 | tr -d "\n"

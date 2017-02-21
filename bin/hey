@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+USAGE="Usage: $0 MESSAGE"
+while getopts hx option; do
+  case $option in
+    x) set -x;;
+    h|\?) echo "$USAGE" 1>&2 && exit 1;;
+  esac
+done
+shift `expr "$OPTIND" - 1`
+
+osascript -e 'display alert "'"$1"'"'

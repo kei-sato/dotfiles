@@ -1,0 +1,16 @@
+#!/usr/bin/env zsh
+# secho = strong echo
+# usage: secho [-n] "hoge"
+
+# get arguments except last one
+args=()
+while [[ $# -gt 1 ]]; do
+  args=( ${args[@]} "$1" )
+  shift
+done
+
+last="$1"
+
+color="003"
+
+print -P ${args[@]} -- "%F{$color}${last}%f"

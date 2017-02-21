@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+which tldr &>/dev/null && tldr "$@" 2>/dev/null || man "$@"
+

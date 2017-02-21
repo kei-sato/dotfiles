@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# https://jwt.io/
+
+DECODE=false
+
+USAGE='usage:
+  jwt-base64 [-D] [file]
+
+example:
+  - encode
+    jwt-base64 /tmp/a.json
+
+  - decode with pipe
+    cat /tmp/a.json | jwt-base64 -D
+'
+
+abort() {
+  [[ $# -gt 0 ]] && echo "$@"
+  echo "$USAGE" 1>&2
+  exit 1
+}
+
+while getopts hD option; do
+  case $option in
+    D) DECODE=true;;
+    h|\?) abort;;
+  esac
+done
+shift $((OPTIND-1))
+
+INPUT=${1:-/dev/stdin}
+
+if $DECODE; then
+  base64 -D < "$INPUT" | jq .
+else
+  jq -jc . "$INPUT" | base64 | tr -d '='
+fi

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# read from argument or stdin
+mask="$1"; [[ -z "$mask" ]] && read -r mask < /dev/stdin
+# remove 0x
+mask="${mask##0x}"
+
+count=0
+
+while [ "$mask" != "" ]; do
+    digit="${mask:0:1}"
+    mask="${mask:1}"
+    case "$digit" in
+        [fF]) count=$((count+4));;
+        [eE]) count=$((count+3));;
+        [cC]) count=$((count+2));;
+        8) count=$((count+1));;
+        0) ;;
+        *) echo 1>&2 "error: illegal digit $digit in netmask"; exit 1;;
+    esac
+done
+
+echo $count

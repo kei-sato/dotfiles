@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# get byte representation
+if [[ $# -eq 0 ]]; then
+  cat
+elif [[ -f "$1" ]]; then
+  cat "$@"
+else
+  echo -n "$@"
+fi | od -t x1 | cut -c 10- | tr -d ' ' | tr -d '\n'

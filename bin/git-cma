@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Small wrapper around git commit. Bare 'cm' will enter normal git commit
+# editor, but with args it will do a direct `commit -am`
+
+if [[ $# > 0 ]]; then
+    git commit -am "$@"
+else
+    git commit -av
+fi
+

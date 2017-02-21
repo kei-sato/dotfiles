@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+USAGE="
+Usage: $0 [-x] (-D %Y%m%d%H%M%S | -H hours | -M minutes | -S minutes) command
+-x) debug
+-h) help
+-D) target datetime as %Y%m%d%H%M%S
+-S) seconds later
+-M) minutes later
+-H) hours later
+"
+
+abort() {
+  {
+    echo "$@"
+    echo "$USAGE"
+  } 1>&2 && exit 1
+}
+
+set -e
+
+unset DATETIME
+unset HOURS
+unset MINUTES
+unset SECONDS
+
+while getopts hxD:M:H:S: option; do
+  case $option in
+    x) set -x;;
+    D) DATETIME="$OPTARG";;
+    H) HOURS="$OPTARG";;
+    M) MINUTES="$OPTARG";;
+    S) SECONDS="$OPTARG";;
+    h|\?) echo "$USAGE" 1>&2 && exit 1;;
+  esac
+done
+shift `expr "$OPTIND" - 1`
+
+: ${DATETIME:=`date +"%Y%m%d%H%M%S"`}
+# padding 0
+while [[ ${#DATETIME} -lt 14 ]]; do DATETIME+="0"; done
+# force length to be 14
+DATETIME=`echo -n $DATETIME | cut -c -14`
+# validate datetime
+date -jf "%Y%m%d%H%M%S" "${DATETIME}" +"%s" &> /dev/null || abort "invalid datetime $DATETIME. make sure datetime is like 20160123, 2016012306, or 201601230645"
+
+[[ $HOURS ]] && DATETIME="`date -j -v +${HOURS}H -f "%Y%m%d%H%M%S" "$DATETIME" +"%Y%m%d%H"`0000"
+[[ $MINUTES ]] && DATETIME="`date -j -v +${MINUTES}M -f "%Y%m%d%H%M%S" "$DATETIME" +"%Y%m%d%H%M"`00"
+[[ $SECONDS ]] && DATETIME="`date -j -v +${SECONDS}S -f "%Y%m%d%H%M%S" "$DATETIME" +"%Y%m%d%H%M%S"`"
+
+TARGET=`date -jf "%Y%m%d%H%M%S" $DATETIME +"%s"`
+NOW=`date +"%s"`
+REMAIN_SEC=$((TARGET-NOW))
+REMAIN_MIN=$((REMAIN_SEC/60))
+while [[ $REMAIN_SEC -gt 0 ]]; do
+  if [[ $REMAIN_MIN -eq 0 ]]; then
+    echo -ne "\r\033[1K execute $REMAIN_SEC sec later"
+    sleep 1
+  else
+    echo -ne "\r\033[1K execute $REMAIN_MIN min later"
+    sleep 60
+  fi
+  NOW=`date +"%s"`
+  REMAIN_SEC=$((TARGET-NOW))
+  REMAIN_MIN=$((REMAIN_SEC/60))
+done && echo && exec "$@"

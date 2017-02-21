@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+USAGE='
+Example:
+  # show calendar two month before
+  cal1 2
+'
+
+if [ $# -eq 0 ]; then echo "$USAGE"
+  exit
+fi
+
+n=${1:-1}
+cal $(date -v -${n}m +"%m %Y")
+

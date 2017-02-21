@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# my shell config file
+fpath=~/.zshrc
+
+unset CMD
+
+while getopts c: option; do
+  case $option in
+    c) CMD="$OPTARG";;
+    \?) :
+  esac
+done
+shift $((OPTIND-1))
+
+# specialized to search commnand
+if [[ -n $CMD ]]; then
+  EXP='(^|\s)'"$CMD"' '
+  grep -A1 -E "$EXP" "$@" "$fpath"
+  exit $?
+fi
+
+if [[ $# -eq 0 ]]; then
+  echo "$fpath"
+else
+  grep -A1 "$@" "$fpath"
+fi
