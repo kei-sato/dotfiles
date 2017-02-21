@@ -1,0 +1,238 @@
+
+# General 
+set-option -g default-shell /bin/zsh
+set-option -g default-command /bin/zsh
+set-option -s escape-time 0
+
+# Use C-s (control and s key at the same time) as the prefix key
+unbind C-b
+set -g prefix C-s
+bind-key -r C-s send-prefix
+
+# Enable copy and paste
+set-option -g default-command "reattach-to-user-namespace -l zsh"
+bind-key p paste-buffer
+
+# Reload config file
+bind-key r source-file ~/.tmux.conf\; display-message "[tmux] $HOME/.tmux.conf reloaded!"
+bind-key C-r source-file ~/.tmux.conf\; display-message "[tmux] $HOME/.tmux.conf reloaded!"
+
+# System window by supported OS
+set-option -g set-titles on
+set-option -g set-titles-string "[tmux] #T @ #H"
+
+# Display time
+set-option -g display-time 3500
+
+
+
+# Moving 
+
+
+## Sessions 
+# Switch clients
+bind-key N switch-client -n
+bind-key P switch-client -p
+
+# Make C-o display a selectable list of sessions
+# bind C-o choose-tree
+bind C-o split-window -v "tmux list-sessions | sed -E 's/:.*$//' | grep -v \"^$(tmux display-message -p '#S')\$\" | fzf --reverse | xargs tmux switch-client -t"
+
+# Quick session switching back and forth. I never use the built in layouts
+# (default mapping for Space), so I reclaimed the key for this
+bind-key Space switch-client -l
+
+bind-key C-b send-keys 'tat && exit' 'C-m'
+
+
+
+
+## Window 
+
+# Start window index 1 origin
+set-option -g base-index 1
+set-option -g renumber-windows on
+
+# Split window (create new pane)
+bind-key - split-window -v  -c '#{pane_current_path}'
+bind-key ] split-window -h  -c '#{pane_current_path}'
+
+# Change active window
+bind-key -r h select-window -t :-
+bind-key -r l select-window -t :+
+
+# Open new windows with current directory
+bind c new-window -c "#{pane_current_path}"
+
+
+
+
+
+## Pane 
+
+# Start pane index 1 origin
+set-window-option -g pane-base-index 1
+
+# Fine adjustment (1 or 2 cursor cells per bump)
+bind -n S-Left resize-pane -L 2
+bind -n S-Right resize-pane -R 2
+bind -n S-Down resize-pane -D 1
+bind -n S-Up resize-pane -U 1
+
+# Coarse adjustment (5 or 10 cursor cells per bump)
+bind -n C-Left resize-pane -L 10
+bind -n C-Right resize-pane -R 10
+bind -n C-Down resize-pane -D 5
+bind -n C-Up resize-pane -U 5
+
+# Change active pane
+#bind-key -r C-h select-pane -L
+#bind-key -r C-j select-pane -D
+#bind-key -r C-k select-pane -U
+#bind-key -r C-l select-pane -R
+
+# Smart pane switching with awareness of Vim splits.
+# See: https://github.com/christoomey/vim-tmux-navigator
+#is_vim="ps -o state= -o comm= -t '#{pane_tty}' \
+    | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'"
+is_vim='echo "#{pane_current_command}" | grep -iqE "(^|\/)g?(view|n?vim?)(diff)?$"'
+bind-key -n C-h if-shell "$is_vim" "send-keys C-h"  "select-pane -L"
+bind-key -n C-j if-shell "$is_vim" "send-keys C-j"  "select-pane -D"
+bind-key -n C-k if-shell "$is_vim" "send-keys C-k"  "select-pane -U"
+bind-key -n C-l if-shell "$is_vim" "send-keys C-l"  "select-pane -R"
+bind-key -n C-\ if-shell "$is_vim" "send-keys C-\\" "select-pane -l"
+
+# clear the screen
+bind-key C-l send-keys 'C-l'
+
+# clear entire line after C-a
+bind-key C-k send-keys 'C-k'
+
+# Prompted join-pane
+bind-key j command-prompt -p "join pane from: "  "join-pane -h -s '%%'"
+
+# Easily swap a pane (targeted by pane number) with the current pane
+bind-key s display-panes\; command-prompt -p "pane #: "  "swap-pane -t '%%'"
+
+# Break or kill pane
+bind-key b break-pane -d
+bind-key q kill-pane
+bind-key C-q kill-session
+
+# Display pane
+bind-key i display-panes
+
+
+
+
+
+
+
+# Appearance 
+
+## Customize statusline 
+
+# C-n, C-p, C-a, C-e, C-k and so on
+set-option -g status-keys "emacs"
+
+# Length left
+set-option -g status-left-length 90
+set-option -g status-right-length 90
+
+# Contents left
+set-option -g status-left '#S:[#P]'
+
+# Contents right
+set-option -g status-right '#[fg=white]#(wifi)#[default] #(battery -t) [%Y-%m-%d(%a) %H:%M]'
+
+# Reload statusbar
+set-option -g status-interval 10
+
+# Centerize
+set-option -g status-justify centre
+
+# Enable visual notification
+set-window-option -g monitor-activity on
+
+# Enable visual notification
+set-option -g visual-activity on
+
+# Enable statusbar top
+set-option -g status-position top
+
+
+
+## Colorscheme: Solarized 
+
+set-option -g default-terminal "screen-256color"
+set-option -g pane-active-border-bg colour235
+
+# Default statusbar colors
+set-option -g status-bg colour235 #base02
+set-option -g status-fg colour136 #yellow
+set-option -g status-attr default
+
+# Default window title colors
+set-window-option -g window-status-fg colour244 #base0
+set-window-option -g window-status-bg default
+set-window-option -g window-status-attr dim
+
+# Active window title colors
+set-window-option -g window-status-current-fg colour166 #orange
+set-window-option -g window-status-current-bg default
+set-window-option -g window-status-current-attr bright
+
+# Pane border
+set-option -g pane-border-fg colour235 #base02
+set-option -g pane-active-border-fg colour240 #base01
+
+# Message text
+set-option -g message-bg colour235 #base02
+set-option -g message-fg colour166 #orange
+
+# Pane number display
+set-option -g display-panes-active-colour colour33 #blue
+set-option -g display-panes-colour colour166 #orange
+
+# Clock
+set-window-option -g clock-mode-colour colour64 #green
+
+
+
+
+## Copy-mode 
+set-window-option -g mode-keys vi
+
+bind-key v copy-mode \; display "Copy mode!"
+bind-key C-v copy-mode \; display "Copy mode!"
+
+bind-key -t vi-copy v begin-selection
+bind-key -t vi-copy y copy-pipe "reattach-to-user-namespace pbcopy"
+unbind-key -t vi-copy Enter
+bind-key -t vi-copy Enter copy-pipe "reattach-to-user-namespace pbcopy"
+
+bind-key -t vi-copy Escape clear-selection
+bind-key -t vi-copy C-c cancel
+bind-key -t vi-copy C-v rectangle-toggle
+bind-key -t vi-copy C-a start-of-line
+bind-key -t vi-copy C-e end-of-line
+bind-key -t vi-copy w next-word
+bind-key -t vi-copy e next-word-end
+bind-key -t vi-copy b previous-word
+bind-key -t vi-copy g top-line
+bind-key -t vi-copy G bottom-line
+bind-key -t vi-copy / search-forward
+bind-key -t vi-copy ? search-backward
+bind-key -t vi-copy C-f page-down
+bind-key -t vi-copy V select-line
+
+
+
+
+# Misc
+# open gitsh
+bind g split-window -c "#{pane_current_path}" -h -p 50 'gitsh'
+
+# Look up in a man-page
+bind-key m command-prompt -p "Man:" "split-window 'man %%'"
+
