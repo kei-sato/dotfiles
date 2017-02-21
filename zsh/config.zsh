@@ -6,8 +6,6 @@ fpath=($ZSH/functions $fpath)
 autoload -U $ZSH/functions/*(:t)
 
 HISTFILE=~/.zsh_history
-HISTSIZE=10000
-SAVEHIST=10000
 
 setopt NO_BG_NICE # don't nice background tasks
 setopt NO_HUP
@@ -29,5 +27,17 @@ setopt HIST_REDUCE_BLANKS
 
 # don't expand aliases _before_ completion has finished
 #   like: git comm-[tab]
-setopt complete_aliases
+setopt COMPLETE_ALIASES
+
+
+# http://qiita.com/uasi/items/c4288dd835a65eb9d709
+# cd directory to type only directory path
+setopt AUTO_CD
+
+# cd history
+setopt AUTO_PUSHD
+setopt PUSHD_IGNORE_DUPS
+
+# extended path pattern matching
+setopt EXTENDED_GLOB
 

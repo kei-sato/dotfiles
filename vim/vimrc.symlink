@@ -152,7 +152,6 @@ nmap <leader>so :source $MYVIMRC<cr>
 inoremap <silent> jj <ESC>
 inoremap <silent> jk <ESC>
 inoremap <silent> kj <ESC>
-inoremap <silent> kk <ESC>
 
 " Map Ctrl-s to write the file
 nmap <C-s> :w<cr>
