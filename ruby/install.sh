@@ -8,3 +8,8 @@ then
   gem install boom
 fi
 
+if test ! $(which bro)
+then
+  gem install bro
+fi
+
