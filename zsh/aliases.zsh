@@ -185,6 +185,7 @@ alias osjs='osascript -l JavaScript'
 alias path='echo $PATH | tr ":" "\n" | sort'
 alias ping='ping -c 5'
 alias pwdcp='pwd | tr -d "\n" | pbcopy'
+alias q='logout'
 alias resh="exec $SHELL -l"
 alias rmrf='rm -rf'
 alias ss="open /System/Library/Frameworks/ScreenSaver.framework/Versions/A/Resources/ScreenSaverEngine.app"
