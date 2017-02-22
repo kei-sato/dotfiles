@@ -198,27 +198,19 @@ alias wget='wget -q'
 
 # Curl
 alias curl='curl -sSL'
-alias ie6curl='curl -H "User-Agent: Mozilla/5.0 (Windows; U; MSIE 6.0; Windows
-NT 5.1; SV1; .NET CLR 2.0.50727)"'
-alias ffcurl='curl -H "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1;
-en-US; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.0 (.NET CLR 3.5.30729)"'
-alias chcurl='curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X
-10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.19
-Safari/537.36"'
-alias gbcurl='curl -H "User-Agent: Mozilla/5.0 (compatible; Googlebot/2.1;
-+http://www.google.com/bot.html)"'
+alias ie6curl='curl -H "User-Agent: Mozilla/5.0 (Windows; U; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 2.0.50727)"'
+alias ffcurl='curl -H "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.0 (.NET CLR 3.5.30729)"'
+alias chcurl='curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.19 Safari/537.36"'
+alias gbcurl='curl -H "User-Agent: Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"'
 alias jcurl="curl -XPOST -H 'Content-Type: application/json;charset=UTF-8'"
 
 # URL-encode strings
-alias encode='python -c "import sys, urllib as ul; print
-ul.quote_plus(sys.argv[1]);"'
-alias decode='python -c "import sys, urllib as ul; print
-ul.unquote_plus(sys.argv[1])"'
+alias encode='python -c "import sys, urllib.parse as ul; print(ul.quote_plus(sys.argv[1]));"'
+alias decode='python -c "import sys, urllib.parse as ul; print(ul.unquote_plus(sys.argv[1]));"'
 
 # View HTTP traffic
 alias sniff="sudo ngrep -d 'en0' -t '^(GET|POST|PUT|DELETE) ' 'tcp and port 80'"
-alias sniff2="sudo tcpdump -A -s 0 'tcp port 80 and (((ip[2:2] -
-((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)'"
+alias sniff2="sudo tcpdump -A -s 0 'tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)'"
 
 # enable paste lines with $ on its head
 alias \$=''
