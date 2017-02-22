@@ -118,9 +118,9 @@ endif
 
 " http://stackoverflow.com/questions/916875/yank-file-name-path-of-current-buffer-in-vim
 " copy full path, and relative path
-nmap <Leader>cpp :let @+ = expand("%:p")<cr>
-nmap <Leader>cpl :let @+ = expand("%")<cr>
-nmap <Leader>cpd :let @+ = expand("%:p:h")<cr>
+nmap <leader>cpp :let @+ = expand("%:p")<cr>
+nmap <leader>cpl :let @+ = expand("%")<cr>
+nmap <leader>cpd :let @+ = expand("%:p:h")<cr>
 
 " ctrl + q to quit
 nmap <c-q> :quit<cr>
@@ -131,8 +131,8 @@ runtime macros/matchit.vim
 
 
 " https://github.com/r00k/dotfiles/blob/master/vimrc
-map <Leader>p :set paste<CR><esc>"*]p:set nopaste<cr>
-map <Leader>ra :%s/
+map <leader>p :set paste<CR><esc>"*]p:set nopaste<cr>
+map <leader>ra :%s/
 
 
 
@@ -258,7 +258,7 @@ nnoremap <Up> :echoe "Use k"<CR>
 nnoremap <Down> :echoe "Use j"<CR>
 
 " Run commands that require an interactive shell
-nnoremap <Leader>r :RunInInteractiveShell<space>
+nnoremap <leader>r :RunInInteractiveShell<space>
 
 " Treat <li> and <p> tags like the block tags they are
 let g:html_indent_tags = 'li\|p'
@@ -295,7 +295,7 @@ set nocompatible
 
 set history=1000	" keep 1000 lines of command line history
 " remove hightlight
-map <Leader>h :nohl<cr>
+map <leader>h :nohl<cr>
 
 " For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
 " let &guioptions = substitute(&guioptions, "t", "", "g")
@@ -327,6 +327,26 @@ nmap <leader>his :CtrlPMRUFiles<cr>
 
 " Space + buf to jump to any files in the buffer
 nmap <leader>buf :CtrlPBuffer<cr>
+
+
+
+
+" https://github.com/christoomey/dotfiles/blob/250c4115dc4d6a7047763d746ceac41ebfbfcac4/vim/rcplugins/ack
+nmap <leader>ck :Ack!<space>
+nnoremap <leader>cc :cclose<cr>
+
+function! s:VisualAck()
+	let temp = @"
+	normal! gvy
+	let escaped_pattern = escape(@", "[]().*")
+	let @" = temp
+	execute "Ack! '" . escaped_pattern . "'"
+endfunction
+
+nnoremap K :Ack! '<C-r><C-w>'<cr>
+vnoremap K :<C-u>call <sid>VisualAck()<cr>
+
+let g:ackprg = 'ag --nogroup --nocolor --column'
 
 
 
