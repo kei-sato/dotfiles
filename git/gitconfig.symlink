@@ -1,4 +1,5 @@
 [alias]
+	a = add
 	aa = add --all
 	amend = commit --amend --reuse-message=HEAD
 	ap = add --patch
@@ -9,6 +10,8 @@
 	ca = !git add -A && git commit -av
 	car = commit --amend --no-edit
 	cb = !"git branch 2>/dev/null | grep '^*' | colrm 1 2"
+	cm = commit -m
+	cma = commit -am
 	co = checkout
 	contributors = shortlog --summary --numbered
 	d = !"git diff-index --quiet HEAD -- || clear; git --no-pager diff --patch-with-stat"
