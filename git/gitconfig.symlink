@@ -15,7 +15,9 @@
 	co = checkout
 	contributors = shortlog --summary --numbered
 	d = !"git diff-index --quiet HEAD -- || clear; git --no-pager diff --patch-with-stat"
+	df = diff
 	di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
+	dif = diff
 	diffw = diff -w
 	# Remove branches that have already been merged with master
 	# a.k.a. ‘delete merged’
