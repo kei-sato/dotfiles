@@ -29,6 +29,7 @@
 	# Find commits by commit message
 	fm = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
 	glog = log -E -i --grep
+	h = help
 	ignorechange = update-index --assume-unchanged
 	ignored = !git ls-files -v | grep "^[[:lower:]]"
 	issues = "!hub brose -- issues"
@@ -58,6 +59,7 @@
 	pl = pull
 	plr = pull --rebase
 	pom = push -u origin master
+	pop = stash pop
 	ps = push
 	reb = "!r() { git rebase -i HEAD~$1; }; r"
 	remotes = remote -v
@@ -65,11 +67,12 @@
 	ri = rebase -i
 	s = status -sb
 	sal = !"git sla" # accept mistyping
+	save = stash save
 	st = status
 	tags = tag -l
 	tracechange = update-index --no-assume-unchanged
 	uncommit = reset --soft HEAD^
-	unstage = reset
+	unstage = reset HEAD
 	upstream = rev-parse --abbrev-ref --symbolic-full-name @{u}
 	ureset = !git upstream && git reset --hard $(git upstream)
 	v = rev-parse --short HEAD
