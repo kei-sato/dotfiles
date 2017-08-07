@@ -21,10 +21,13 @@
 	diffw = diff -w
 	# Remove branches that have already been merged with master
 	# a.k.a. ‘delete merged’
-	dm = "!git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d"
+	dm = "!git branch --merged | grep -vE '(\\*|master|develop)' | xargs -n 1 git branch -d"
+	dmr = "!git branch -r --merged | grep -vE '(\\*|master|develop)' | xargs -n 1 git branch -r -d"
+	f = fetch
+	fco = !"f() { git fetch origin $1 && git checkout $1; }; f"
 	# Find commits by source code
 	fc = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S$1; }; f"
-	first = !"git init && git add . && git cm -m 'first commit'"
+	first = !"git init && git add . && git commit -m 'first commit'"
 	flog = log --name-status
 	# Find commits by commit message
 	fm = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
@@ -61,6 +64,7 @@
 	pom = push -u origin master
 	pop = stash pop
 	ps = push
+	psuo = push -u origin
 	reb = "!r() { git rebase -i HEAD~$1; }; r"
 	remotes = remote -v
 	retag = "!r() { git tag -d $1 && git push origin :refs/tags/$1 && git tag $1; }; r"
@@ -68,9 +72,11 @@
 	s = status -sb
 	sal = !"git sla" # accept mistyping
 	save = stash save
+	set-upstream = !git branch --set-upstream-to=origin/`git symbolic-ref --short HEAD`
 	st = status
 	tags = tag -l
 	tracechange = update-index --no-assume-unchanged
+	trackall = "!for remote in `git branch -r`; do git branch --set-upstream-to=$remote ${remote#origin/}; done"
 	uncommit = reset --soft HEAD^
 	unstage = reset HEAD
 	upstream = rev-parse --abbrev-ref --symbolic-full-name @{u}
@@ -80,6 +86,9 @@
 	# Detect whitespace errors when applying a patch
 	whitespace = fix
 [color]
+	diff = auto
+	status = auto
+	branch = auto
 	ui = true
 [commit]
 	template = ~/.gitmessage
@@ -87,7 +96,7 @@
 	excludesfile = ~/.gitignore
 	attributesfile = ~/.gitattributes
 	whitespace = space-before-tab,-indent-with-non-tab,trailing-space
-  editor = vim
+	editor = vim
 
 	# Make `git rebase` safer on macOS
 	# More info: <http://www.git-tower.com/blog/make-git-rebase-safe-on-osx/>
@@ -108,12 +117,14 @@
 	path = ~/.gitconfig.local
 [push]
 	default = upstream
-[pager]
-	diff = diff-so-fancy | less --tabs=4 -RFX
-	show = diff-so-fancy | less --tabs=4 -RFX
+[difftool]
+	prompt = false
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
-	path = 
+	path =
 [mergetool "sourcetree"]
 	cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
+[user]
+	name = Kei
+	email = kei-sato@meeetol.com

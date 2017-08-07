@@ -1,6 +1,9 @@
 # Compiled Python files
 *.pyc
 
+# Jupyter Notebook
+.ipynb_checkpoints
+
 # Folder view configuration files
 .DS_Store
 Desktop.ini
