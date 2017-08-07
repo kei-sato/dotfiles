@@ -9,4 +9,5 @@ while getopts hx option; do
 done
 shift `expr "$OPTIND" - 1`
 
-osascript -e 'display alert "'"$1"'"'
+msg=${@:-hey}
+osascript -e 'display alert "'"$msg"'"'
