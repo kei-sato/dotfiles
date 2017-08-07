@@ -1,0 +1,83 @@
+{
+	"auto_complete_selector": "source - comment, meta.tag - punctuation.definition.tag.begin",
+	"auto_complete_triggers":
+	[
+		{
+			"characters": "ng-controller=\"*",
+			"selector": "punctuation.definition.string"
+		},
+		{
+			"characters": "<",
+			"selector": "text.html"
+		}
+	],
+	"binary_file_patterns":
+	[
+		"*.dic",
+		"*.jpg",
+		"*.jpeg",
+		"*.png",
+		"*.svg",
+		"*.gif",
+		"*.ttf",
+		"*.tif",
+		"*.woff",
+		"*.psd",
+		"*.PEF",
+		"*.mp4",
+		"*.mov",
+		"*.wav",
+		"*.mp3",
+		"*.raw",
+		"*.m4a",
+		"*.tga",
+		"*.dds",
+		"*.ico",
+		"*.eot",
+		"*.pdf",
+		"*.swf",
+		"*.jar",
+		"*.class",
+		"*.pyc",
+		"*.pkl",
+		"*.tgz",
+		"*.gz",
+		"*.zip",
+		"*.map"
+	],
+	"color_scheme": "Packages/User/SublimeLinter/base16-ocean.dark (SL).tmTheme",
+	"file_exclude_patterns":
+	[
+		"*.log",
+		".DS_Store",
+		"*~",
+		"*.sublime-*"
+	],
+	"folder_exclude_patterns":
+	[
+		".svn",
+		".git",
+		".hg",
+		"CVS",
+		".sass-cache",
+		"node_modules",
+		"__pycache__",
+		"dump",
+		"bower"
+	],
+	"highlight_line": true,
+	"ignored_packages":
+	[
+		"AngularJS",
+		"Mocha Coffee Snippets",
+		"SublimeLinter-pep8",
+		"SublimeLinter-pyflakes",
+		"Vintage"
+	],
+	"open_files_in_new_window": false,
+	"show_full_path": true,
+	"tab_size": 2,
+	"theme": "Spacegray.sublime-theme",
+	"translate_tabs_to_spaces": true,
+	"use_tab_stops": true
+}
