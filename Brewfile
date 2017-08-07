@@ -67,7 +67,7 @@ brew 'xz'
 brew 'dark-mode'
 brew 'git'
 brew 'git-lfs'
-brew 'imagemagick', args: ['with-webp']
+brew 'imagemagick', args: ['with-webp', 'with-rsvg']
 brew 'lua'
 brew 'lynx'
 brew 'p7zip'
