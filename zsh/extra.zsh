@@ -6,3 +6,5 @@ ulimit -n 1024
 # It will disable the above behavior and free Ctrl-S and Ctrl-Q for use in terminal apps!
 stty -ixon -ixoff
 
+# enable emacs keymap to use ^A ^E
+bindkey -e
