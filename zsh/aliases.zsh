@@ -13,6 +13,8 @@ alias dl="cd ~/Downloads"
 alias desk="cd ~/Desktop"
 alias h="history"
 alias j="jobs"
+alias vd='vim ~/.dotfiles'
+alias sd='subl ~/.dotfiles'
 
 # Detect which `ls` flavor is in use
 if ls --color > /dev/null 2>&1; then # GNU `ls`
@@ -159,9 +161,11 @@ alias date1='date +%Y%m%d'
 alias date2='date "+%Y-%m-%d %H:%M:%S"'
 alias df='df -h'
 alias diff='colordiff -u'
+alias dns='cat /etc/resolv.conf | grep -i '\''^nameserver'\'' | cut -d '\'' '\'' -f2'
 alias dtruss='sudo dtruss -f sudo -u $(id -u -n)'
 alias du='du -cksh'
 alias fin='hey finished!'
+alias gateway='netstat -rn | grep default'
 alias gi='grep -i'
 alias giv='grep -iv'
 alias gsh='gitsh'
@@ -181,11 +185,12 @@ alias mcc='mc -c'
 alias mcv='vim `mc`'
 alias mkdir="mkdir -p"
 alias na='nato-phonetic-alphabet'
+alias od='od -v -Ad'
 alias osjs='osascript -l JavaScript'
 alias path='echo $PATH | tr ":" "\n" | sort'
 alias ping='ping -c 5'
 alias pwdcp='pwd | tr -d "\n" | pbcopy'
-alias q='logout'
+alias q='exit'
 alias resh="exec $SHELL -l"
 alias rmrf='rm -rf'
 alias ss="open /System/Library/Frameworks/ScreenSaver.framework/Versions/A/Resources/ScreenSaverEngine.app"
