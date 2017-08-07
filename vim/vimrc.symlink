@@ -392,6 +392,11 @@ nnoremap <leader>py :VtrOpenRunner {'orientation': 'h', 'percentage': 50, 'cmd':
 
 
 
+" https://github.com/vim-syntastic/syntastic
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_wq = 0
 
 " mxw/vim-jsx
 let g:jsx_ext_required = 0
@@ -403,7 +408,8 @@ augroup javascript
   autocmd BufWrite *.js,*.jsx EsFix
 augroup END
 
-
+" use eslint for syntax checker
+let g:syntastic_javascript_checkers=['eslint']
 
 
 
