@@ -30,6 +30,7 @@ brew 'spark'
 brew 'unrar'
 brew 'vim', args: ['with-override-system-vi']
 brew 'wget', args: ['with-iri']
+brew 'yarn'
 brew 'youtube-dl'
 
 # font tools
