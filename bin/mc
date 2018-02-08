@@ -16,12 +16,12 @@ shift $((OPTIND-1))
 # specialized to search commnand
 if [[ -n $CMD ]]; then
   EXP='(^|\s)'"$CMD"'($|\s)'
-  grep -A1 -E "$EXP" "$@" "$fpath"
+  grep -C1 -E "$EXP" "$@" "$fpath"
   exit $?
 fi
 
 if [[ $# -eq 0 ]]; then
   echo "$fpath"
 else
-  grep -A1 "$@" "$fpath"
+  grep -C1 "$@" "$fpath"
 fi
