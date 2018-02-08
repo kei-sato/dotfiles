@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+USAGE='
+Example:
+  # get network interface id
+  eni i-0f91a5f9e8da100a6
+'
+
+if [ $# -eq 0 ]; then echo "$USAGE"
+  exit
+fi
+
+instanceid=${1}
+
+aws ec2 describe-network-interfaces --filters "Name=attachment.instance-id,Values=${instanceid}" | jq -r '.NetworkInterfaces[].NetworkInterfaceId'

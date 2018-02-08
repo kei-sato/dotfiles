@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+USAGE='
+Example:
+  # run Amazon Linux AMI with name
+  runi who
+'
+
+name=${1:-greenpepper}
+amiid=${2:-ami-d424e7b2}
+aws ec2 run-instances --image-id "${amiid}" --instance-type t2.micro --key-name id_rsa --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${name}}]"

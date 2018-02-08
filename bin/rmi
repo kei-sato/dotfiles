@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+USAGE='
+Example:
+  # terminate instnace
+  rmi i-0f91a5f9e8da100a6
+'
+
+if [ $# -eq 0 ]; then echo "$USAGE"
+  exit
+fi
+
+aws ec2 terminate-instances --instance-ids $@

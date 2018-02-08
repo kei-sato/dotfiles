@@ -1,0 +1,11 @@
+#!/bin/bash
+normalize () {
+case $1 in
+  "iad") echo "us-east-1";;
+  "dub") echo "eu-west-1";;
+  "nrt") echo "ap-northeast-1";;
+  *) echo $1
+esac
+}
+region=$(normalize $1)
+sed -i.bak "s/^region = .*/region = $region/" ~/.aws/config
