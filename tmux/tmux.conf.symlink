@@ -206,25 +206,27 @@ set-window-option -g mode-keys vi
 bind-key v copy-mode \; display "Copy mode!"
 bind-key C-v copy-mode \; display "Copy mode!"
 
-bind-key -t vi-copy v begin-selection
-bind-key -t vi-copy y copy-pipe "reattach-to-user-namespace pbcopy"
-unbind-key -t vi-copy Enter
-bind-key -t vi-copy Enter copy-pipe "reattach-to-user-namespace pbcopy"
+bind-key -T copy-mode-vi v send-keys -X begin-selection
+bind-key -T copy-mode-vi y send-keys -X copy-pipe "reattach-to-user-namespace pbcopy"
+unbind-key -T copy-mode-vi Enter
+bind-key -T copy-mode-vi Enter send-keys -X copy-pipe "reattach-to-user-namespace pbcopy"
 
-bind-key -t vi-copy Escape clear-selection
-bind-key -t vi-copy C-c cancel
-bind-key -t vi-copy C-v rectangle-toggle
-bind-key -t vi-copy C-a start-of-line
-bind-key -t vi-copy C-e end-of-line
-bind-key -t vi-copy w next-word
-bind-key -t vi-copy e next-word-end
-bind-key -t vi-copy b previous-word
-bind-key -t vi-copy g top-line
-bind-key -t vi-copy G bottom-line
-bind-key -t vi-copy / search-forward
-bind-key -t vi-copy ? search-backward
-bind-key -t vi-copy C-f page-down
-bind-key -t vi-copy V select-line
+bind-key -T copy-mode-vi Escape send-keys -X clear-selection
+bind-key -T copy-mode-vi C-c send-keys -X cancel
+bind-key -T copy-mode-vi C-v send-keys -X rectangle-toggle
+bind-key -T copy-mode-vi C-a send-keys -X start-of-line
+bind-key -T copy-mode-vi C-e send-keys -X end-of-line
+bind-key -T copy-mode-vi w send-keys -X next-word
+bind-key -T copy-mode-vi e send-keys -X next-word-end
+bind-key -T copy-mode-vi b send-keys -X previous-word
+bind-key -T copy-mode-vi g send-keys -X top-line
+bind-key -T copy-mode-vi G send-keys -X bottom-line
+bind-key -T copy-mode-vi C-f send-keys -X page-down
+bind-key -T copy-mode-vi V send-keys -X select-line
+
+# https://qiita.com/delphinus/items/b8dba653f81fa591b193
+bind-key -T copy-mode-vi / command-prompt -i -p "search down" "send -X search-forward-incremental \"%%%\""
+bind-key -T copy-mode-vi ? command-prompt -i -p "search up" "send -X search-backward-incremental \"%%%\""
 
 
 
