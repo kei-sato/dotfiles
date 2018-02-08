@@ -1,0 +1,3 @@
+M="$1"; shift
+MSG="$*"
+later -M "$M" hey "$MSG" &
