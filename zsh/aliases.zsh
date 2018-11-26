@@ -56,7 +56,8 @@ alias week='date +%V'
 alias update='sudo softwareupdate -i -a; brew update; brew upgrade; brew cleanup; npm install npm -g; npm update -g; sudo gem update --system; sudo gem update; sudo gem cleanup'
 
 # IP addresses
-alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
+# alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
+alias ip="curl ifconfig.me/ip"
 alias localip="ipconfig getifaddr en0"
 alias ips="ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }'"
 
@@ -200,9 +201,27 @@ alias trn='tr -d [:space:]'
 alias tt='tasktoday'
 alias vimrc='vim `rc`'
 alias wget='wget -q'
+alias sqlplus='rlwrap sqlplus'
+alias awsid='echo -n "660052344889" | tee >(pbcopy)'
+alias pwadmi='echo -n "Qgd50IewdUgTeHi!" | tee >(pbcopy)'
+alias pwadm='pwadmi'
+alias pwad='pwadmi'
+alias mute='osascript -e '\''tell application "System Events" to set volume input volume 0'\'
+alias unmute='osascript -e '\''tell application "System Events" to set volume input volume 50'\'
+alias accountid='pbpaste | tr -d "-" | tee >(pbcopy)'
+alias acc='accountid'
+alias pbp='pbpaste'
+alias pbc='pbcopy'
+alias pbpc='pbpaste | pbcopy'
+alias pbpx="pbpaste | tr '[[:alnum:]]' x"
+alias noad='aws ec2 describe-images --owners self | jq -r ".Images[].ImageId" | while read x; do echo $x; aws ec2 create-tags --resources $x --tags Key=auto-delete,Value=no; sleep 1; done'
+alias alami="aws ec2 describe-images --owner amazon --filters 'Name=name,Values=amzn-ami-hvm-*' 'Name=virtualization-type,Values=hvm' 'Name=root-device-type,Values=ebs' --query 'Images[].[Name, ImageId]' --output text|sort|tail -n 1"
+alias tless="tee /tmp/output | less"
+alias oless="less /tmp/output"
 
 # Curl
 alias curl='curl -sSL'
+alias curlv='curl -svo /dev/null'
 alias ie6curl='curl -H "User-Agent: Mozilla/5.0 (Windows; U; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 2.0.50727)"'
 alias ffcurl='curl -H "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.0 (.NET CLR 3.5.30729)"'
 alias chcurl='curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.19 Safari/537.36"'
@@ -217,6 +236,28 @@ alias decode='python -c "import sys, urllib.parse as ul; print(ul.unquote_plus(s
 alias sniff="sudo ngrep -d 'en0' -t '^(GET|POST|PUT|DELETE) ' 'tcp and port 80'"
 alias sniff2="sudo tcpdump -A -s 0 'tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)'"
 
+# aws command utilities
+alias dbids='aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | read dbid; echo dbid=$dbid'
+alias rmdb='aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | xargs -I@ aws rds delete-db-instance --db-instance-identifier "@" --skip-final-snapshot'
+alias rmcls='aws rds describe-db-clusters --query "DBClusters[].DBClusterIdentifier" | jq -r ".[]" | peco | xargs -I@ aws rds delete-db-cluster --db-cluster-identifier "@" --skip-final-snapshot'
+
+alias ins="aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name==\"running\") | [.LaunchTime, .InstanceId, .State.Name, .VpcId, .SubnetId, .PrivateIpAddress, .PublicIpAddress, (.Tags[]? | select(.Key==\"Name\").Value)] | @csv' | sort"
+alias inss="aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name==\"stopped\") | [.LaunchTime, .InstanceId, .State.Name, .VpcId, .SubnetId, .PrivateIpAddress, .PublicIpAddress, (.Tags[]? | select(.Key==\"Name\").Value)] | @csv' | sort"
+alias dbs="aws rds describe-db-instances | jq -r '.DBInstances[] | [.InstanceCreateTime, .DBInstanceStatus, .Engine, .DBInstanceIdentifier, .Endpoint.Address] | @csv' | sort -t, -k3,3"
+alias clusters="aws rds describe-db-clusters | jq -r '.DBClusters[] | [.ClusterCreateTime, .Status, .Engine, .EngineVersion, .DBClusterIdentifier] | @csv' | sort -t, -k3,3"
+alias pgs="aws rds describe-db-parameter-groups | jq -r '.DBParameterGroups[] | [.DBParameterGroupFamily, .DBParameterGroupName] | @csv' | sort"
+alias clspgs="aws rds describe-db-cluster-parameter-groups | jq -r '.DBClusterParameterGroups[] | [.DBParameterGroupFamily, .DBClusterParameterGroupName] | @csv' | sort"
+
+# GitHub - wallix/awless: A Mighty CLI for AWS
+# https://github.com/wallix/awless
+alias instances="awless list instances"
+alias subnets="awless list subnets"
+alias volumes="awless list volumes"
+alias vpcs="awless list vpcs"
+alias sgs="awless list securitygroups"
+alias images="awless list images"
+alias databases="awless list databases"
+
 # enable paste lines with $ on its head
 alias \$=''
 
@@ -229,3 +270,13 @@ fi
 # locate.updatedb
 alias locate.updatedb='sudo /usr/libexec/locate.updatedb'
 
+# misc
+## copy formatted pimms loss data
+alias cpim="pbpaste | tr '\n' '#' | sed -e 's/µs#/µs@/g' | tr -d '#' | tr '@' '\n' | sed -e 's/^[[:space:]]*//g' | tee >(pbcopy)"
+alias cpk2="pbpaste | tr '\n' 'π' | sed -e $'s/\tπ/\t/g' -e $'s/π π/\t/g' | tr 'π' '\n' | sed -e 's/^[[:space:]]*//g' | sed -e '/^$/d' | tee >(pbcopy)"
+alias k2cp=cpk2
+alias cpcwl="pbpaste | tr -d '' | tr '\n' 'π' | sed -e $'s/π[0-9][0-9]:[0-9][0-9]:[0-9][0-9]π//g' | tr 'π' '\n' | sed -e 's/^[[:space:]]*//g'"
+alias cptt="pbpaste | tr '\n' ' ' | sed -e 's/GMT+0900 /GMT+0900π/g' | tr 'π' '\n' | awk 'NR%2==1' | tee >(pbcopy)"
+alias cwlcp=cpcwl
+alias grepcase=casegrep
+alias genpg='awk '\''{print "aws rds modify-db-parameter-group --db-parameter-group-name \"\$pg\" --parameters ParameterName=" $2 ",ParameterValue=\"" $3 "\",ApplyMethod=pending-reboot" }'\'' | tee >(pbcopy)'
