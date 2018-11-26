@@ -284,3 +284,152 @@ dstart() {
 }
 
 
+# aws
+
+ccls() {
+
+  if [ $# -lt 2 ]; then
+    echo "create aurora cluster with specific version"
+    echo "usage: ccls <instance name> <version>"
+    echo "example: ccls ins-1 1.15.1"
+    return
+  fi
+
+  dbid="$1"
+  clsid="${dbid}-cluster"
+
+  aws rds create-db-cluster \
+    --db-cluster-identifier "$clsid" \
+    --engine aurora \
+    --engine-version 5.6.10a \
+    --master-username root \
+    --master-user-password password
+
+  aws rds create-db-instance \
+    --db-instance-identifier "$dbid" \
+    --db-cluster-identifier "$clsid" \
+    --engine aurora \
+    --engine-version 5.6.10a."$2" \
+    --no-auto-minor-version-upgrade \
+    --publicly-accessible \
+    --db-instance-class db.t2.small
+
+}
+
+cdb() {
+
+  cat > /tmp/engines << EOF
+mariadb
+mysql
+oracle-ee
+postgres
+sqlserver-ee
+sqlserver-ex
+sqlserver-se
+sqlserver-web
+EOF
+
+  local engine version mazchar maz saz cmd okchar
+
+  peco < /tmp/engines | read engine
+
+  if [ -z "$engine" ]; then
+    return
+  fi
+
+  echo "saved engine: $engine"
+
+  aws rds describe-db-engine-versions --filters "Name=engine,Values=$engine" --query "DBEngineVersions[].EngineVersion" | jq -r '.[]' | peco | read version
+
+  if [ -z "$version" ]; then
+    return
+  fi
+  
+  echo "saved version: $version"
+
+  echo -n 'DB instance name: '; read dbid
+
+  if [ -z "$dbid" ]; then
+    echo "DB instance name is empty. abort"
+    return
+  fi
+
+  echo -n 'Multi-AZ [y/N]: '; read mazchar
+
+  if [ "$mazchar" = "y" ]; then
+    maz=1
+  else
+    saz=1
+  fi
+
+
+  echo aws rds create-db-instance \
+  --db-instance-identifier "$dbid" \
+  --engine "$engine" \
+  --engine-version "$version" \
+  --db-instance-class db.t2.small \
+  --allocated-storage 20 \
+  --db-name db1 \
+  --master-username root \
+  --master-user-password password \
+  ${maz:+ --multi-az} \
+  ${saz:+ --no-multi-az} \
+  --no-auto-minor-version-upgrade \
+  --publicly-accessible | read cmd
+
+  echo
+  echo "the following command will be executed:"
+  echo
+  echo "$cmd"
+  echo
+  echo -n 'Is it ok? [Y/n]: '; read okchar
+
+  if [ "$okchar" = "n" ]; then
+    return
+  fi
+
+  eval "$cmd"
+
+}
+
+dpg() {
+  local okchar tempfile
+
+  if [ ! -z "$pg" ]; then
+    echo -n "describe ${pg} [Y/n]: "; read okchar
+    if [ "$okchar" = "n" ]; then
+      unset pg
+    fi
+  fi
+
+  if [ -z "$pg" ]; then
+    aws rds describe-db-parameter-groups --query "DBParameterGroups[].DBParameterGroupName" | jq -r '.[]' | peco | read pg
+  fi
+
+  tempfile=$(mktemp)
+  aws rds describe-db-parameters --db-parameter-group-name "$pg" > "$tempfile"
+
+  less "$tempfile"
+  echo "saved to : $tempfile"
+}
+
+dclspg() {
+  local okchar tempfile
+
+  if [ ! -z "$clspg" ]; then
+    echo -n "describe ${clspg} [Y/n]: "; read okchar
+    if [ "$okchar" = "n" ]; then
+      unset clspg
+    fi
+  fi
+
+  if [ -z "$clspg" ]; then
+    aws rds describe-db-cluster-parameter-groups --query "DBClusterParameterGroups[].DBClusterParameterGroupName" | jq -r '.[]' | peco | read clspg
+  fi
+
+  tempfile=$(mktemp)
+  aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspg" > "$tempfile"
+
+  less "$tempfile"
+  echo "saved to : $tempfile"
+}
