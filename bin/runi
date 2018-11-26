@@ -2,9 +2,35 @@
 USAGE='
 Example:
   # run Amazon Linux AMI with name
-  runi who
+  runi -i ami-ceafcba8 -t t2.micro -n who
 '
 
-name=${1:-greenpepper}
-amiid=${2:-ami-d424e7b2}
-aws ec2 run-instances --image-id "${amiid}" --instance-type t2.micro --key-name id_rsa --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${name}}]"
+abort() {
+  [[ $# -gt 0 ]] && echo "$@"
+  echo "$USAGE" 1>&2
+  exit 1
+}
+
+while getopts ht:i:n: option; do
+  case $option in
+    t) itype="$OPTARG";;
+    i) amiid="$OPTARG";;
+    n) name="$OPTARG";;
+    h|\?) abort;;
+  esac
+done
+[[ $OPTIND -gt 1 ]] && shift $((OPTIND - 1))
+
+# cache file for ami id
+file_amiid_cache=/private/tmp/amiid_cache
+
+[ -f "$file_amiid_cache" ] && find /private/tmp -name $(basename "$file_amiid_cache") -mtime +7d -delete
+
+if [ -z "$amiid" ] && [ ! -f "$file_amiid_cache" ]; then
+  aws ec2 describe-images --owner amazon --filters 'Name=name,Values=amzn-ami-hvm-*' 'Name=virtualization-type,Values=hvm' 'Name=root-device-type,Values=ebs' --query 'Images[].[Name, ImageId]' --output text| sort | tail -n 1 | awk '{print $2}' > "$file_amiid_cache"
+fi
+
+name=${name:-greenpepper}
+amiid=${amiid:-$(cat "$file_amiid_cache")}
+itype=${itype:-t2.micro}
+aws ec2 run-instances --image-id "${amiid}" --instance-type "$itype" --key-name id_rsa --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${name}}]"
