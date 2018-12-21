@@ -155,7 +155,7 @@ alias path='echo -e ${PATH//:/\\n}'
 
 
 alias ae='addevent -c 2'
-alias call='cal | grep --color -EC6 "\b$(date +%e | sed "s/ //g")"'
+alias call='cal $(date +%Y) | grep --color -E "\b$(date +%e | sed "s/ //g")\b|$(date +%B)|$"'
 alias cidr='echo "`getip`/`getmask | netmask-bit-count`"'
 alias cln='git clone'
 alias date1='date +%Y%m%d'
@@ -164,7 +164,7 @@ alias df='df -h'
 alias diff='colordiff -u'
 alias dns='cat /etc/resolv.conf | grep -i '\''^nameserver'\'' | cut -d '\'' '\'' -f2'
 alias dtruss='sudo dtruss -f sudo -u $(id -u -n)'
-alias du='du -cksh'
+alias du='du -ck'
 alias fin='hey finished!'
 alias gateway='netstat -rn | grep default'
 alias gi='grep -i'
@@ -213,9 +213,8 @@ alias acc='accountid'
 alias pbp='pbpaste'
 alias pbc='pbcopy'
 alias pbpc='pbpaste | pbcopy'
+alias pbpo='pbpaste | xargs open'
 alias pbpx="pbpaste | tr '[[:alnum:]]' x"
-alias noad='aws ec2 describe-images --owners self | jq -r ".Images[].ImageId" | while read x; do echo $x; aws ec2 create-tags --resources $x --tags Key=auto-delete,Value=no; sleep 1; done'
-alias alami="aws ec2 describe-images --owner amazon --filters 'Name=name,Values=amzn-ami-hvm-*' 'Name=virtualization-type,Values=hvm' 'Name=root-device-type,Values=ebs' --query 'Images[].[Name, ImageId]' --output text|sort|tail -n 1"
 alias tless="tee /tmp/output | less"
 alias oless="less /tmp/output"
 
@@ -236,28 +235,6 @@ alias decode='python -c "import sys, urllib.parse as ul; print(ul.unquote_plus(s
 alias sniff="sudo ngrep -d 'en0' -t '^(GET|POST|PUT|DELETE) ' 'tcp and port 80'"
 alias sniff2="sudo tcpdump -A -s 0 'tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)'"
 
-# aws command utilities
-alias dbids='aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | read dbid; echo dbid=$dbid'
-alias rmdb='aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | xargs -I@ aws rds delete-db-instance --db-instance-identifier "@" --skip-final-snapshot'
-alias rmcls='aws rds describe-db-clusters --query "DBClusters[].DBClusterIdentifier" | jq -r ".[]" | peco | xargs -I@ aws rds delete-db-cluster --db-cluster-identifier "@" --skip-final-snapshot'
-
-alias ins="aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name==\"running\") | [.LaunchTime, .InstanceId, .State.Name, .VpcId, .SubnetId, .PrivateIpAddress, .PublicIpAddress, (.Tags[]? | select(.Key==\"Name\").Value)] | @csv' | sort"
-alias inss="aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name==\"stopped\") | [.LaunchTime, .InstanceId, .State.Name, .VpcId, .SubnetId, .PrivateIpAddress, .PublicIpAddress, (.Tags[]? | select(.Key==\"Name\").Value)] | @csv' | sort"
-alias dbs="aws rds describe-db-instances | jq -r '.DBInstances[] | [.InstanceCreateTime, .DBInstanceStatus, .Engine, .DBInstanceIdentifier, .Endpoint.Address] | @csv' | sort -t, -k3,3"
-alias clusters="aws rds describe-db-clusters | jq -r '.DBClusters[] | [.ClusterCreateTime, .Status, .Engine, .EngineVersion, .DBClusterIdentifier] | @csv' | sort -t, -k3,3"
-alias pgs="aws rds describe-db-parameter-groups | jq -r '.DBParameterGroups[] | [.DBParameterGroupFamily, .DBParameterGroupName] | @csv' | sort"
-alias clspgs="aws rds describe-db-cluster-parameter-groups | jq -r '.DBClusterParameterGroups[] | [.DBParameterGroupFamily, .DBClusterParameterGroupName] | @csv' | sort"
-
-# GitHub - wallix/awless: A Mighty CLI for AWS
-# https://github.com/wallix/awless
-alias instances="awless list instances"
-alias subnets="awless list subnets"
-alias volumes="awless list volumes"
-alias vpcs="awless list vpcs"
-alias sgs="awless list securitygroups"
-alias images="awless list images"
-alias databases="awless list databases"
-
 # enable paste lines with $ on its head
 alias \$=''
 
@@ -271,12 +248,27 @@ fi
 alias locate.updatedb='sudo /usr/libexec/locate.updatedb'
 
 # misc
-## copy formatted pimms loss data
-alias cpim="pbpaste | tr '\n' '#' | sed -e 's/µs#/µs@/g' | tr -d '#' | tr '@' '\n' | sed -e 's/^[[:space:]]*//g' | tee >(pbcopy)"
-alias cpk2="pbpaste | tr '\n' 'π' | sed -e $'s/\tπ/\t/g' -e $'s/π π/\t/g' | tr 'π' '\n' | sed -e 's/^[[:space:]]*//g' | sed -e '/^$/d' | tee >(pbcopy)"
-alias k2cp=cpk2
-alias cpcwl="pbpaste | tr -d '' | tr '\n' 'π' | sed -e $'s/π[0-9][0-9]:[0-9][0-9]:[0-9][0-9]π//g' | tr 'π' '\n' | sed -e 's/^[[:space:]]*//g'"
-alias cptt="pbpaste | tr '\n' ' ' | sed -e 's/GMT+0900 /GMT+0900π/g' | tr 'π' '\n' | awk 'NR%2==1' | tee >(pbcopy)"
-alias cwlcp=cpcwl
-alias grepcase=casegrep
-alias genpg='awk '\''{print "aws rds modify-db-parameter-group --db-parameter-group-name \"\$pg\" --parameters ParameterName=" $2 ",ParameterValue=\"" $3 "\",ApplyMethod=pending-reboot" }'\'' | tee >(pbcopy)'
+
+# aws command utilities
+alias ins="aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name==\"running\") | [.LaunchTime, .InstanceId, .State.Name, .VpcId, .SubnetId, .PrivateIpAddress, .PublicIpAddress, (.Tags[]? | select(.Key==\"Name\").Value)] | @csv' | sort"
+alias inss="aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name==\"stopped\") | [.LaunchTime, .InstanceId, .State.Name, .VpcId, .SubnetId, .PrivateIpAddress, .PublicIpAddress, (.Tags[]? | select(.Key==\"Name\").Value)] | @csv' | sort"
+alias noad='aws ec2 describe-images --owners self | jq -r ".Images[].ImageId" | while read x; do echo $x; aws ec2 create-tags --resources $x --tags Key=auto-delete,Value=no; sleep 1; done'
+alias alami="aws ec2 describe-images --owner amazon --filters 'Name=name,Values=amzn-ami-hvm-*' 'Name=virtualization-type,Values=hvm' 'Name=root-device-type,Values=ebs' --query 'Images[].[Name, ImageId]' --output text|sort|tail -n 1"
+
+alias dbids='aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | read dbid; echo dbid=$dbid'
+alias rmdb='aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | xargs -I@ aws rds delete-db-instance --db-instance-identifier "@" --skip-final-snapshot'
+alias rmcls='aws rds describe-db-clusters --query "DBClusters[].DBClusterIdentifier" | jq -r ".[]" | peco | xargs -I@ aws rds delete-db-cluster --db-cluster-identifier "@" --skip-final-snapshot'
+alias lsdb="aws rds describe-db-instances | jq -r '.DBInstances[] | [.InstanceCreateTime, .DBInstanceStatus, .Engine, .DBInstanceIdentifier, .Endpoint.Address] | @csv' | sort -t, -k3,3"
+alias lscls="aws rds describe-db-clusters | jq -r '.DBClusters[] | [.ClusterCreateTime, .Status, .Engine, .EngineVersion, .DBClusterIdentifier] | @csv' | sort -t, -k3,3"
+alias lspgs="aws rds describe-db-parameter-groups | jq -r '.DBParameterGroups[] | [.DBParameterGroupFamily, .DBParameterGroupName] | @csv' | sort"
+alias lsclspgs="aws rds describe-db-cluster-parameter-groups | jq -r '.DBClusterParameterGroups[] | [.DBParameterGroupFamily, .DBClusterParameterGroupName] | @csv' | sort"
+
+# GitHub - wallix/awless: A Mighty CLI for AWS
+# https://github.com/wallix/awless
+alias instances="awless list instances"
+alias subnets="awless list subnets"
+alias volumes="awless list volumes"
+alias vpcs="awless list vpcs"
+alias sgs="awless list securitygroups"
+alias images="awless list images"
+alias databases="awless list databases"

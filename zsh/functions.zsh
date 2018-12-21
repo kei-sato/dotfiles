@@ -286,110 +286,20 @@ dstart() {
 
 # aws
 
-ccls() {
+pickdbid() {
+  local okchar dbst
 
-  if [ $# -lt 2 ]; then
-    echo "create aurora cluster with specific version"
-    echo "usage: ccls <instance name> <version>"
-    echo "example: ccls ins-1 1.15.1"
-    return
+  if [ ! -z "$dbid" ]; then
+    echo -n "use ${dbid} [Y/n]: "; read okchar
+    if [ "$okchar" = "n" ]; then
+      unset dbid
+    fi
   fi
-
-  dbid="$1"
-  clsid="${dbid}-cluster"
-
-  aws rds create-db-cluster \
-    --db-cluster-identifier "$clsid" \
-    --engine aurora \
-    --engine-version 5.6.10a \
-    --master-username root \
-    --master-user-password password
-
-  aws rds create-db-instance \
-    --db-instance-identifier "$dbid" \
-    --db-cluster-identifier "$clsid" \
-    --engine aurora \
-    --engine-version 5.6.10a."$2" \
-    --no-auto-minor-version-upgrade \
-    --publicly-accessible \
-    --db-instance-class db.t2.small
-
-}
-
-cdb() {
-
-  cat > /tmp/engines << EOF
-mariadb
-mysql
-oracle-ee
-postgres
-sqlserver-ee
-sqlserver-ex
-sqlserver-se
-sqlserver-web
-EOF
-
-  local engine version mazchar maz saz cmd okchar
-
-  peco < /tmp/engines | read engine
-
-  if [ -z "$engine" ]; then
-    return
-  fi
-
-  echo "saved engine: $engine"
-
-  aws rds describe-db-engine-versions --filters "Name=engine,Values=$engine" --query "DBEngineVersions[].EngineVersion" | jq -r '.[]' | peco | read version
-
-  if [ -z "$version" ]; then
-    return
-  fi
-  
-  echo "saved version: $version"
-
-  echo -n 'DB instance name: '; read dbid
 
   if [ -z "$dbid" ]; then
-    echo "DB instance name is empty. abort"
-    return
+    dbst="$1"
+    aws rds describe-db-instances --query "DBInstances[${dbst:+?DBInstanceStatus==\`$dbst\`}].DBInstanceIdentifier" | jq -r ".[]" | peco | read dbid
   fi
-
-  echo -n 'Multi-AZ [y/N]: '; read mazchar
-
-  if [ "$mazchar" = "y" ]; then
-    maz=1
-  else
-    saz=1
-  fi
-
-
-  echo aws rds create-db-instance \
-  --db-instance-identifier "$dbid" \
-  --engine "$engine" \
-  --engine-version "$version" \
-  --db-instance-class db.t2.small \
-  --allocated-storage 20 \
-  --db-name db1 \
-  --master-username root \
-  --master-user-password password \
-  ${maz:+ --multi-az} \
-  ${saz:+ --no-multi-az} \
-  --no-auto-minor-version-upgrade \
-  --publicly-accessible | read cmd
-
-  echo
-  echo "the following command will be executed:"
-  echo
-  echo "$cmd"
-  echo
-  echo -n 'Is it ok? [Y/n]: '; read okchar
-
-  if [ "$okchar" = "n" ]; then
-    return
-  fi
-
-  eval "$cmd"
-
 }
 
 dpg() {
@@ -433,3 +343,73 @@ dclspg() {
   less "$tempfile"
   echo "saved to : $tempfile"
 }
+
+starti() {
+  local iid
+  aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name=="stopped") | [.LaunchTime, .InstanceId, (.Tags[]? | select(.Key=="Name").Value)] | @csv' | sort | peco | cut -d, -f2 | tr -d '"' | read iid
+  [ -z "$iid" ] && return
+  aws ec2 start-instances --instance-ids "$iid"
+}
+
+stopi() {
+  local iid
+  aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name=="running") | [.LaunchTime, .InstanceId, (.Tags[]? | select(.Key=="Name").Value)] | @csv' | sort | peco | cut -d, -f2 | tr -d '"' | read iid
+  [ -z "$iid" ] && return
+  aws ec2 stop-instances --instance-ids "$iid"
+}
+
+waitstopped() {
+  [ -z "$dbid" ] && return
+  alias date2='date "+%Y-%m-%d %H:%M:%S"'
+  echo "[$(date2)] start checking $dbid"
+  while :; do
+    aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`stopped`].DBInstanceIdentifier' | egrep "\"$dbid\"" && break
+    sleep 10
+  done
+  echo "[$(date2)] $dbid is stopped"
+  hey "$dbid is stopped"
+}
+
+lessdblog() {
+  local fname fsize ftmp1 ftmp2
+
+  if [ -z "$dbid" ]; then
+    aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | read dbid
+  fi
+
+  aws rds describe-db-log-files --db-instance-identifier "$dbid" | jq -r '.DescribeDBLogFiles | sort_by(.LastWritten) | reverse | .[].LogFileName' | peco | read fname
+
+  if [ -z "$fname" ]; then
+    return
+  fi
+
+  ftmp1=$(mktemp)
+  ftmp2=$(mktemp)
+
+  aws rds describe-db-log-files --db-instance-identifier "$dbid" --filename-contains "$fname" --query "DescribeDBLogFiles[0].Size" | read fsize
+  echo "Size : ${fsize}"
+
+  t=0
+  while [ ! "$t" = null -o "$t" = 0 ]; do
+    aws rds download-db-log-file-portion --db-instance-identifier "$dbid" --log-file-name "$fname" --starting-token "$t" --max-items 1000000 > "$ftmp2" || return
+    jq -r '.LogFileData' < "$ftmp2" >> "$ftmp1"
+    t="$(jq -r '.NextToken' < "$ftmp2")"
+    wc -c "$ftmp1"
+  done
+
+  less "$ftmp1"
+  echo "saved to $ftmp1"
+}
+
+lesscli() {
+  local dir fpath
+  dir="/usr/local/share/awscli/examples"
+  find "$dir" -type f | cut -c 34- | peco | read fpath
+
+  if [ -z "$fpath" ]; then
+    return
+  fi
+
+  less "${dir}/${fpath}"
+}
+
