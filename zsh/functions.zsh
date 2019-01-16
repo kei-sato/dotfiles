@@ -302,6 +302,66 @@ pickdbid() {
   fi
 }
 
+pickclsid() {
+  local okchar clsst
+
+  if [ ! -z "$clsid" ]; then
+    echo -n "use ${clsid} [Y/n]: "; read okchar
+    if [ "$okchar" = "n" ]; then
+      unset clsid
+    fi
+  fi
+
+  if [ -z "$clsid" ]; then
+    clsst="$1"
+    aws rds describe-db-clusters --query "DBClusters[${clsst:+?Status==\`$clsst\`}].DBClusterIdentifier" | jq -r ".[]" | peco | read clsid
+  fi
+}
+
+ddb() {
+  local tempfile
+
+  dbst="$1"
+
+  pickdbid "${dbst:+$dbst}"
+
+  [ -z "$dbid" ] && return
+
+  tempfile=$(mktemp)
+
+  aws rds describe-db-instances --db-instance-identifier "$dbid" > "$tempfile"
+
+  less "$tempfile"
+  echo "saved to : $tempfile"
+}
+
+dcls() {
+  local tempfile
+
+  clsst="$1"
+
+  pickclsid "${clsst:+$clsst}"
+
+  [ -z "$clsid" ] && return
+
+  tempfile=$(mktemp)
+
+  aws rds describe-db-clusters --db-cluster-identifier "$clsid" > "$tempfile"
+
+  less "$tempfile"
+  echo "saved to : $tempfile"
+}
+
+rbdb() {
+  dbst="$1"
+
+  pickdbid "${dbst:+$dbst}"
+
+  [ -z "$dbid" ] && return
+
+  aws rds reboot-db-instance --db-instance-identifier "$dbid"
+}
+
 dpg() {
   local okchar tempfile
 
@@ -356,6 +416,28 @@ stopi() {
   aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name=="running") | [.LaunchTime, .InstanceId, (.Tags[]? | select(.Key=="Name").Value)] | @csv' | sort | peco | cut -d, -f2 | tr -d '"' | read iid
   [ -z "$iid" ] && return
   aws ec2 stop-instances --instance-ids "$iid"
+}
+
+startdb() {
+  aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`stopped`].DBInstanceIdentifier' | jq -r ".[]" | peco | read dbid
+  [ -z "$dbid" ] && return
+  aws rds start-db-instance --db-instance-identifier "$dbid"
+}
+
+stopdb() {
+  aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`available`].DBInstanceIdentifier' | jq -r ".[]" | peco | read dbid
+  [ -z "$dbid" ] && return
+  aws rds stop-db-instance --db-instance-identifier "$dbid"
+}
+
+waitavailable() {
+  pickdbid
+  [ -z "$dbid" ] && return
+
+  echo started: $(date "+%Y-%m-%d %H:%M:%S")
+  sleep 10
+  aws rds wait db-instance-available --db-instance-identifier "$dbid" && hey available $_ || hey failed $_
+  echo finished: $(date "+%Y-%m-%d %H:%M:%S")
 }
 
 waitstopped() {
