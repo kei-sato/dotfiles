@@ -329,10 +329,16 @@ ddb() {
 
   tempfile=$(mktemp)
 
-  aws rds describe-db-instances --db-instance-identifier "$dbid" > "$tempfile"
+  echo aws rds describe-db-instances --db-instance-identifier "$dbid" | read cmd
+  eval "$cmd" > "$tempfile"
 
   less "$tempfile"
-  echo "saved to : $tempfile"
+  1>&2 echo "saved to : $tempfile"
+  1>&2 echo
+  1>&2 echo "the following command was executed:"
+  1>&2 echo
+  1>&2 echo "$cmd"
+  1>&2 echo
 }
 
 dcls() {
@@ -377,10 +383,16 @@ dpg() {
   fi
 
   tempfile=$(mktemp)
-  aws rds describe-db-parameters --db-parameter-group-name "$pg" > "$tempfile"
+  echo aws rds describe-db-parameters --db-parameter-group-name "$pg" | read cmd
+  eval "$cmd" > "$tempfile"
 
   less "$tempfile"
-  echo "saved to : $tempfile"
+  1>&2 echo "saved to : $tempfile"
+  1>&2 echo
+  1>&2 echo "the following command was executed:"
+  1>&2 echo
+  1>&2 echo "$cmd"
+  1>&2 echo
 }
 
 dclspg() {
