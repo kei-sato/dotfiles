@@ -290,7 +290,7 @@ pickdbid() {
   local okchar dbst
 
   if [ ! -z "$dbid" ]; then
-    echo -n "use ${dbid} [Y/n]: "; read okchar
+    1>&2 echo -n "use ${dbid} [Y/n]: "; read okchar
     if [ "$okchar" = "n" ]; then
       unset dbid
     fi
@@ -306,7 +306,7 @@ pickclsid() {
   local okchar clsst
 
   if [ ! -z "$clsid" ]; then
-    echo -n "use ${clsid} [Y/n]: "; read okchar
+    1>&2 echo -n "use ${clsid} [Y/n]: "; read okchar
     if [ "$okchar" = "n" ]; then
       unset clsid
     fi
@@ -318,44 +318,56 @@ pickclsid() {
   fi
 }
 
-ddb() {
-  local tempfile
+eval_echo() {
+  local OPTIND option outless cmd tempfile
 
+  while getopts l option; do
+    case "${option}" in
+      l) outless=1;;
+      \?) :;;
+    esac
+  done
+  [[ $OPTIND -gt 1 ]] && shift $((OPTIND-1))
+
+  cmd="$@"
+
+  [ -z "$cmd" ] && return
+
+  tempfile=$(mktemp)
+
+  if [ "$outless" -eq 1 ]; then
+    eval "$cmd" | tee "$tempfile" | less
+  else
+    eval "$cmd" | tee "$tempfile"
+  fi
+
+  1>&2 echo
+  1>&2 echo "saved to : $tempfile"
+  1>&2 echo
+  1>&2 echo "command:"
+  1>&2 echo
+  1>&2 echo "$cmd"
+  1>&2 echo
+}
+
+ddb() {
   dbst="$1"
 
   pickdbid "${dbst:+$dbst}"
 
   [ -z "$dbid" ] && return
 
-  tempfile=$(mktemp)
-
-  echo aws rds describe-db-instances --db-instance-identifier "$dbid" | read cmd
-  eval "$cmd" > "$tempfile"
-
-  less "$tempfile"
-  1>&2 echo "saved to : $tempfile"
-  1>&2 echo
-  1>&2 echo "the following command was executed:"
-  1>&2 echo
-  1>&2 echo "$cmd"
-  1>&2 echo
+  eval_echo -l aws rds describe-db-instances --db-instance-identifier "$dbid"
 }
 
 dcls() {
-  local tempfile
-
   clsst="$1"
 
   pickclsid "${clsst:+$clsst}"
 
   [ -z "$clsid" ] && return
 
-  tempfile=$(mktemp)
-
-  aws rds describe-db-clusters --db-cluster-identifier "$clsid" > "$tempfile"
-
-  less "$tempfile"
-  echo "saved to : $tempfile"
+  eval_echo -l aws rds describe-db-clusters --db-cluster-identifier "$clsid"
 }
 
 rbdb() {
@@ -365,14 +377,14 @@ rbdb() {
 
   [ -z "$dbid" ] && return
 
-  aws rds reboot-db-instance --db-instance-identifier "$dbid"
+  eval_echo aws rds reboot-db-instance --db-instance-identifier "$dbid"
 }
 
 dpg() {
-  local okchar tempfile
+  local okchar
 
   if [ ! -z "$pg" ]; then
-    echo -n "describe ${pg} [Y/n]: "; read okchar
+    1>&2 echo -n "describe ${pg} [Y/n]: "; read okchar
     if [ "$okchar" = "n" ]; then
       unset pg
     fi
@@ -382,24 +394,14 @@ dpg() {
     aws rds describe-db-parameter-groups --query "DBParameterGroups[].DBParameterGroupName" | jq -r '.[]' | peco | read pg
   fi
 
-  tempfile=$(mktemp)
-  echo aws rds describe-db-parameters --db-parameter-group-name "$pg" | read cmd
-  eval "$cmd" > "$tempfile"
-
-  less "$tempfile"
-  1>&2 echo "saved to : $tempfile"
-  1>&2 echo
-  1>&2 echo "the following command was executed:"
-  1>&2 echo
-  1>&2 echo "$cmd"
-  1>&2 echo
+  eval_echo -l aws rds describe-db-parameters --db-parameter-group-name "$pg"
 }
 
 dclspg() {
-  local okchar tempfile
+  local okchar
 
   if [ ! -z "$clspg" ]; then
-    echo -n "describe ${clspg} [Y/n]: "; read okchar
+    1>&2 echo -n "describe ${clspg} [Y/n]: "; read okchar
     if [ "$okchar" = "n" ]; then
       unset clspg
     fi
@@ -409,37 +411,33 @@ dclspg() {
     aws rds describe-db-cluster-parameter-groups --query "DBClusterParameterGroups[].DBClusterParameterGroupName" | jq -r '.[]' | peco | read clspg
   fi
 
-  tempfile=$(mktemp)
-  aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspg" > "$tempfile"
-
-  less "$tempfile"
-  echo "saved to : $tempfile"
+  eval_echo -l aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspg"
 }
 
 starti() {
   local iid
   aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name=="stopped") | [.LaunchTime, .InstanceId, (.Tags[]? | select(.Key=="Name").Value)] | @csv' | sort | peco | cut -d, -f2 | tr -d '"' | read iid
   [ -z "$iid" ] && return
-  aws ec2 start-instances --instance-ids "$iid"
+  eval_echo aws ec2 start-instances --instance-ids "$iid"
 }
 
 stopi() {
   local iid
   aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name=="running") | [.LaunchTime, .InstanceId, (.Tags[]? | select(.Key=="Name").Value)] | @csv' | sort | peco | cut -d, -f2 | tr -d '"' | read iid
   [ -z "$iid" ] && return
-  aws ec2 stop-instances --instance-ids "$iid"
+  eval_echo aws ec2 stop-instances --instance-ids "$iid"
 }
 
 startdb() {
   aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`stopped`].DBInstanceIdentifier' | jq -r ".[]" | peco | read dbid
   [ -z "$dbid" ] && return
-  aws rds start-db-instance --db-instance-identifier "$dbid"
+  eval_echo aws rds start-db-instance --db-instance-identifier "$dbid"
 }
 
 stopdb() {
   aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`available`].DBInstanceIdentifier' | jq -r ".[]" | peco | read dbid
   [ -z "$dbid" ] && return
-  aws rds stop-db-instance --db-instance-identifier "$dbid"
+  eval_echo aws rds stop-db-instance --db-instance-identifier "$dbid"
 }
 
 waitavailable() {
@@ -473,9 +471,7 @@ lessdblog() {
 
   aws rds describe-db-log-files --db-instance-identifier "$dbid" | jq -r '.DescribeDBLogFiles | sort_by(.LastWritten) | reverse | .[].LogFileName' | peco | read fname
 
-  if [ -z "$fname" ]; then
-    return
-  fi
+  [ -z "$fname" ] && return
 
   ftmp1=$(mktemp)
   ftmp2=$(mktemp)
@@ -500,9 +496,7 @@ lesscli() {
   dir="/usr/local/share/awscli/examples"
   find "$dir" -type f | cut -c 34- | peco | read fpath
 
-  if [ -z "$fpath" ]; then
-    return
-  fi
+  [ -z "$fpath" ] && return
 
   less "${dir}/${fpath}"
 }
