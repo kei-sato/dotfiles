@@ -429,13 +429,13 @@ stopi() {
 }
 
 startdb() {
-  aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`stopped`].DBInstanceIdentifier' | jq -r ".[]" | peco | read dbid
+  pickdbid stopped
   [ -z "$dbid" ] && return
   eval_echo aws rds start-db-instance --db-instance-identifier "$dbid"
 }
 
 stopdb() {
-  aws rds describe-db-instances --query 'DBInstances[?DBInstanceStatus==`available`].DBInstanceIdentifier' | jq -r ".[]" | peco | read dbid
+  pickdbid available
   [ -z "$dbid" ] && return
   eval_echo aws rds stop-db-instance --db-instance-identifier "$dbid"
 }
@@ -451,6 +451,7 @@ waitavailable() {
 }
 
 waitstopped() {
+  pickdbid
   [ -z "$dbid" ] && return
   alias date2='date "+%Y-%m-%d %H:%M:%S"'
   echo "[$(date2)] start checking $dbid"
