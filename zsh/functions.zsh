@@ -267,6 +267,14 @@ echop() {
 }
 
 ################
+# Mac
+################
+
+hey() {
+  which osascript &>/dev/null && osascript -e 'display alert "'"$*"'"'
+}
+
+################
 # docker
 ################
 
