@@ -306,7 +306,7 @@ pickdbid() {
 
   if [ -z "$dbid" ]; then
     dbst="$1"
-    aws rds describe-db-instances --query "DBInstances[${dbst:+?DBInstanceStatus==\`$dbst\`}].DBInstanceIdentifier" | jq -r ".[]" | peco | read dbid
+    dbid=$(aws rds describe-db-instances --query "DBInstances[${dbst:+?DBInstanceStatus==\`$dbst\`}].DBInstanceIdentifier" | jq -r ".[]" | peco)
   fi
 }
 
@@ -322,7 +322,7 @@ pickclsid() {
 
   if [ -z "$clsid" ]; then
     clsst="$1"
-    aws rds describe-db-clusters --query "DBClusters[${clsst:+?Status==\`$clsst\`}].DBClusterIdentifier" | jq -r ".[]" | peco | read clsid
+    clsid=$(aws rds describe-db-clusters --query "DBClusters[${clsst:+?Status==\`$clsst\`}].DBClusterIdentifier" | jq -r ".[]" | peco)
   fi
 }
 
@@ -399,7 +399,7 @@ dpg() {
   fi
 
   if [ -z "$pg" ]; then
-    aws rds describe-db-parameter-groups --query "DBParameterGroups[].DBParameterGroupName" | jq -r '.[]' | peco | read pg
+    pg=$(aws rds describe-db-parameter-groups --query "DBParameterGroups[].DBParameterGroupName" | jq -r '.[]' | peco)
   fi
 
   eval_echo -l aws rds describe-db-parameters --db-parameter-group-name "$pg"
@@ -416,7 +416,7 @@ dclspg() {
   fi
 
   if [ -z "$clspg" ]; then
-    aws rds describe-db-cluster-parameter-groups --query "DBClusterParameterGroups[].DBClusterParameterGroupName" | jq -r '.[]' | peco | read clspg
+    clspg=$(aws rds describe-db-cluster-parameter-groups --query "DBClusterParameterGroups[].DBClusterParameterGroupName" | jq -r '.[]' | peco)
   fi
 
   eval_echo -l aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspg"
@@ -474,18 +474,17 @@ waitstopped() {
 lessdblog() {
   local fname fsize ftmp1 ftmp2
 
-  if [ -z "$dbid" ]; then
-    aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | read dbid
-  fi
+  pickdbid
+  [ -z "$dbid" ] && return
 
-  aws rds describe-db-log-files --db-instance-identifier "$dbid" | jq -r '.DescribeDBLogFiles | sort_by(.LastWritten) | reverse | .[].LogFileName' | peco | read fname
+  fname=$(aws rds describe-db-log-files --db-instance-identifier "$dbid" | jq -r '.DescribeDBLogFiles | sort_by(.LastWritten) | reverse | .[].LogFileName' | peco)
 
   [ -z "$fname" ] && return
 
   ftmp1=$(mktemp)
   ftmp2=$(mktemp)
 
-  aws rds describe-db-log-files --db-instance-identifier "$dbid" --filename-contains "$fname" --query "DescribeDBLogFiles[0].Size" | read fsize
+  fsize=$(aws rds describe-db-log-files --db-instance-identifier "$dbid" --filename-contains "$fname" --query "DescribeDBLogFiles[0].Size")
   echo "Size : ${fsize}"
 
   t=0
