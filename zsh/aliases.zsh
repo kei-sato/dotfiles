@@ -159,7 +159,7 @@ alias call='cal $(date +%Y) | grep --color -E "\b$(date +%e | sed "s/ //g")\b|$(
 alias cidr='echo "`getip`/`getmask | netmask-bit-count`"'
 alias cln='git clone'
 alias date1='date +%Y%m%d'
-alias date2='date "+%Y-%m-%d %H:%M:%S"'
+alias date2='date "+%Y-%m-%d %H:%M:%S %z"'
 alias df='df -h'
 alias diff='colordiff -u'
 alias dns='cat /etc/resolv.conf | grep -i '\''^nameserver'\'' | cut -d '\'' '\'' -f2'
@@ -255,7 +255,7 @@ alias inss="aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] |
 alias noad='aws ec2 describe-images --owners self | jq -r ".Images[].ImageId" | while read x; do echo $x; aws ec2 create-tags --resources $x --tags Key=auto-delete,Value=no; sleep 1; done'
 alias alami="aws ec2 describe-images --owner amazon --filters 'Name=name,Values=amzn-ami-hvm-*' 'Name=virtualization-type,Values=hvm' 'Name=root-device-type,Values=ebs' --query 'Images[].[Name, ImageId]' --output text|sort|tail -n 1"
 
-alias dbids='aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | read dbid; echo dbid=$dbid'
+alias dbids='dbid=$(aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco); echo dbid=$dbid'
 alias rmdb='aws rds describe-db-instances --query "DBInstances[].DBInstanceIdentifier" | jq -r ".[]" | peco | xargs -I@ aws rds delete-db-instance --db-instance-identifier "@" --skip-final-snapshot'
 alias rmcls='aws rds describe-db-clusters --query "DBClusters[].DBClusterIdentifier" | jq -r ".[]" | peco | xargs -I@ aws rds delete-db-cluster --db-cluster-identifier "@" --skip-final-snapshot'
 alias lsdb="aws rds describe-db-instances | jq -r '.DBInstances[] | [.InstanceCreateTime, .DBInstanceStatus, .Engine, .DBInstanceIdentifier, .Endpoint.Address] | @csv' | sort -t, -k3,3"
