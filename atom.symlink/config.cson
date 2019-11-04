@@ -1,12 +1,17 @@
 "*":
+  "autocomplete-plus":
+    autoActivationDelay: 100
+    confirmCompletion: "tab always, enter when suggestion explicitly selected"
   core:
     disabledPackages: [
       "background-tips"
       "exception-reporting"
       "metrics"
+      "vim-mode-plus"
+      "wrap-guide"
     ]
     followSymlinks: false
-    hideGitIgnoredFiles: true
+    hideGitIgnoredFiles: false
     ignoredNames: [
       ".bundle"
       ".git"
@@ -14,18 +19,30 @@
       "repositories"
       "tmp"
       "vendor"
+      ".xlsx"
+      ".png"
+      ".jpg"
+      ".jpeg"
+      ".gz"
+      ".zip"
     ]
     telemetryConsent: "no"
     themes: [
-      "unity-ui"
-      "glacier-syntax"
+      "atom-material-ui"
+      "monokai"
     ]
   editor:
+    autoIndentOnPaste: false
     fontFamily: "Menlo"
-    fontSize: 15
+    fontSize: 10
     invisibles: {}
+    preferredLineLength: 200
     showIndentGuide: true
-    softWrapAtPreferredLineLength: true
+    softWrap: true
+  "find-and-replace":
+    scrollToResultOnLiveSearch: true
+    searchContextLineCountAfter: 1
+    searchContextLineCountBefore: 1
   "go-plus":
     panelDisplayMode: "closed"
   "linter-eslint":
@@ -39,5 +56,9 @@
       "text.git-commit"
       "text.html.basic"
     ]
+  "tree-view":
+    autoReveal: true
   welcome:
     showOnStartup: false
+  whitespace:
+    ensureSingleTrailingNewline: false

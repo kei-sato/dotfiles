@@ -1,0 +1,11 @@
+
+'atom-text-editor':
+  'ctrl-u': 'custom:move-half-page-up'
+  'ctrl-d': 'custom:move-half-page-down'
+  'ctrl-shift-b': 'copy-path:copy-basename'
+  'ctrl-shift-p': 'copy-path:copy-full-path'
+  'ctrl-a': 'editor:move-to-beginning-of-line'
+  'ctrl-shift-a': 'editor:select-to-beginning-of-line'
+  'cmd-shift-left': 'editor:select-to-beginning-of-line'
+  'cmd-d': 'custom:select-and-find'
+  'ctrl-shift-r': 'custom:rename-file'
