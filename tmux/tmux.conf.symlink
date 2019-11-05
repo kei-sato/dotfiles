@@ -1,5 +1,5 @@
 
-# General 
+# General
 set-option -g default-shell /bin/zsh
 set-option -g default-command /bin/zsh
 set-option -s escape-time 0
@@ -26,10 +26,10 @@ set-option -g display-time 3500
 
 
 
-# Moving 
+# Moving
 
 
-## Sessions 
+## Sessions
 # Switch clients
 bind-key N switch-client -n
 bind-key P switch-client -p
@@ -47,7 +47,7 @@ bind-key C-b send-keys 'tat && exit' 'C-m'
 
 
 
-## Window 
+## Window
 
 # Start window index 1 origin
 set-option -g base-index 1
@@ -68,7 +68,7 @@ bind c new-window -c "#{pane_current_path}"
 
 
 
-## Pane 
+## Pane
 
 # Start pane index 1 origin
 set-window-option -g pane-base-index 1
@@ -128,9 +128,9 @@ bind-key i display-panes
 
 
 
-# Appearance 
+# Appearance
 
-## Customize statusline 
+## Customize statusline
 
 # C-n, C-p, C-a, C-e, C-k and so on
 set-option -g status-keys "emacs"
@@ -162,33 +162,25 @@ set-option -g status-position top
 
 
 
-## Colorscheme: Solarized 
+## Colorscheme: Solarized
 
 set-option -g default-terminal "screen-256color"
-set-option -g pane-active-border-bg colour235
 
 # Default statusbar colors
-set-option -g status-bg colour235 #base02
-set-option -g status-fg colour136 #yellow
-set-option -g status-attr default
+set-option -g status-style bg="colour235","default",fg="colour136" #base02
 
 # Default window title colors
-set-window-option -g window-status-fg colour244 #base0
-set-window-option -g window-status-bg default
-set-window-option -g window-status-attr dim
+set-window-option -g window-status-style bg="default","dim",fg="colour244"
 
 # Active window title colors
-set-window-option -g window-status-current-fg colour166 #orange
-set-window-option -g window-status-current-bg default
-set-window-option -g window-status-current-attr bright
+set-window-option -g window-status-current-style bg="default","bright",fg="colour166"
 
 # Pane border
-set-option -g pane-border-fg colour235 #base02
-set-option -g pane-active-border-fg colour240 #base01
+set-option -g pane-border-style fg="colour235" #base02
+set-option -g pane-active-border-style  bg="colour235","default",fg="colour240" #base01
 
 # Message text
-set-option -g message-bg colour235 #base02
-set-option -g message-fg colour166 #orange
+set-option -g message-style bg="colour235","default",fg="colour166" #base02
 
 # Pane number display
 set-option -g display-panes-active-colour colour33 #blue
@@ -200,7 +192,7 @@ set-window-option -g clock-mode-colour colour64 #green
 
 
 
-## Copy-mode 
+## Copy-mode
 set-window-option -g mode-keys vi
 
 bind-key v copy-mode \; display "Copy mode!"
@@ -239,4 +231,3 @@ bind g split-window -c "#{pane_current_path}" -v -p 50 'gitsh'
 
 # Look up in a man-page
 bind-key m command-prompt -p "Man:" "split-window 'man %%'"
-
