@@ -82,6 +82,7 @@
 	upstream = rev-parse --abbrev-ref --symbolic-full-name @{u}
 	ureset = !git upstream && git reset --hard $(git upstream)
 	v = rev-parse --short HEAD
+	dag = log --graph --format='format:%C(yellow)%h%C(reset) %C(blue)%an <%ae>%C(reset) %C(magenta)%cr%C(reset)%C(auto)%d%C(reset)%n%s' --date-order
 [apply]
 	# Detect whitespace errors when applying a patch
 	whitespace = fix
@@ -105,6 +106,9 @@
 	# Prevent showing files whose names contain non-ASCII symbols as unversioned.
 	# http://michael-kuehnel.de/git/2014/11/21/git-mac-osx-and-german-umlaute.html
 	precomposeunicode = false
+	pager = less -FMRiX
+
+	ignorecase = false
 [diff]
 	# Detect copies as well as renames
 	renames = copies
@@ -127,4 +131,4 @@
 	trustExitCode = true
 [user]
 	name = Kei
-	email = kei-sato@meeetol.com
+	email = keisto@amazon.com
