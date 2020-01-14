@@ -27,7 +27,10 @@ file_amiid_cache=/private/tmp/amiid_cache
 [ -f "$file_amiid_cache" ] && find /private/tmp -name $(basename "$file_amiid_cache") -mtime +7d -delete
 
 if [ -z "$amiid" ] && [ ! -f "$file_amiid_cache" ]; then
-  aws ec2 describe-images --owner amazon --filters 'Name=name,Values=amzn-ami-hvm-*' 'Name=virtualization-type,Values=hvm' 'Name=root-device-type,Values=ebs' --query 'Images[].[Name, ImageId]' --output text| sort | tail -n 1 | awk '{print $2}' > "$file_amiid_cache"
+  # Amazon Linux AMI 2
+  aws ec2 describe-images --owner amazon --filters 'Name=name,Values=amzn2-ami-hvm-2.0.*-gp2' 'Name=virtualization-type,Values=hvm' 'Name=root-device-type,Values=ebs' --query 'Images[].[Name, ImageId]' --output text | sort | tail -n 1 | awk '{print $2}' > "$file_amiid_cache"
+  # Amazon Linux AMI 1
+  # aws ec2 describe-images --owner amazon --filters 'Name=name,Values=amzn-ami-hvm-*' 'Name=virtualization-type,Values=hvm' 'Name=root-device-type,Values=ebs' --query 'Images[].[Name, ImageId]' --output text| sort | tail -n 1 | awk '{print $2}' > "$file_amiid_cache"
 fi
 
 name=${name:-greenpepper}
