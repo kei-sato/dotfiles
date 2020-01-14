@@ -9,3 +9,9 @@
   'cmd-shift-left': 'editor:select-to-beginning-of-line'
   'cmd-d': 'custom:select-and-find'
   'ctrl-shift-r': 'custom:rename-file'
+
+'atom-workspace':
+  'ctrl-i': 'cursor-history:next'
+  'ctrl-o': 'cursor-history:prev'
+  'ctrl-cmd-i': 'cursor-history:next-within-editor'
+  'ctrl-cmd-o': 'cursor-history:prev-within-editor'

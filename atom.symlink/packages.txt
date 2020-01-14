@@ -1,4 +1,5 @@
 advanced-open-file@0.16.8
 copy-path@0.5.1
+cursor-history@0.14.0
+monokai@0.24.0
 project-plus@1.0.0
-
