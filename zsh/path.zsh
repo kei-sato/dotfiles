@@ -1,5 +1,7 @@
 #!/usr/bin/env zsh
 
+export PATH="$HOME/bin:$PATH"
+
 # adb (installed by Android Studio)
 export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
 

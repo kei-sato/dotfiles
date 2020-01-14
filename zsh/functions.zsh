@@ -274,6 +274,11 @@ hey() {
   which osascript &>/dev/null && osascript -e 'display alert "'"$*"'"'
 }
 
+# convert unix time stamp to readable format
+timestamp() {
+	TZ=UTC date -jf %s "$1" '+%Y-%m-%d %H:%M:%S %z'
+}
+
 ################
 # docker
 ################

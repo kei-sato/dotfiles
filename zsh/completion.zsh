@@ -19,3 +19,6 @@ zstyle ":chpwd:*" recent-dirs-max 10000
 zstyle ":chpwd:*" recent-dirs-default true
 zstyle ":completion:*" recent-dirs-insert always
 
+# aws cli
+# http://docs.aws.amazon.com/ja_jp/cli/latest/userguide/cli-command-completion.html
+source /usr/local/share/zsh/site-functions/aws_zsh_completer.sh
