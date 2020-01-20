@@ -1,9 +1,7 @@
 cask_args appdir: '/Applications'
 
 tap 'homebrew/bundle'
-tap 'homebrew/completions'
 tap 'homebrew/core'
-tap 'homebrew/versions'
 tap 'goles/battery'
 tap 'thoughtbot/formulae'
 
@@ -32,7 +30,6 @@ brew 'bramstein/webfonttools/woff2'
 
 # Install some CTF tools; see https://github.com/ctfs/write-ups.
 brew 'aircrack-ng'
-brew 'bfg'
 brew 'binutils'
 brew 'binwalk'
 brew 'cifer'
@@ -106,7 +103,7 @@ cask 'android-studio'
 cask 'anki'
 cask 'atom'
 cask 'eclipse-jee'
-cask 'firefox'
+# cask 'firefox'
 cask 'gitter'
 cask 'google-chrome'
 cask 'gyazo'
