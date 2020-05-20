@@ -311,7 +311,7 @@ pickdbid() {
 
   if [ -z "$dbid" ]; then
     dbst="$1"
-    dbid=$(aws rds describe-db-instances --query "DBInstances[${dbst:+?DBInstanceStatus==\`$dbst\`}].DBInstanceIdentifier" | jq -r ".[]" | peco)
+    dbid=$(aws rds describe-db-instances --query "DBInstances[${dbst:+?DBInstanceStatus==\`$dbst\`}].[DBInstanceIdentifier]" --output text | peco)
   fi
 }
 
@@ -327,7 +327,22 @@ pickclsid() {
 
   if [ -z "$clsid" ]; then
     clsst="$1"
-    clsid=$(aws rds describe-db-clusters --query "DBClusters[${clsst:+?Status==\`$clsst\`}].DBClusterIdentifier" | jq -r ".[]" | peco)
+    clsid=$(aws rds describe-db-clusters --query "DBClusters[${clsst:+?Status==\`$clsst\`}].[DBClusterIdentifier]" --output text | peco)
+  fi
+}
+
+pickpgname() {
+  local okchar
+
+  if [ ! -z "$pgname" ]; then
+    1>&2 echo -n "describe ${pgname} [Y/n]: "; read okchar
+    if [ "$okchar" = "n" ]; then
+      unset pgname
+    fi
+  fi
+
+  if [ -z "$pgname" ]; then
+    pgname=$(aws rds describe-db-parameter-groups --query "DBParameterGroups[].[DBParameterGroupName]" --output text | peco)
   fi
 }
 
@@ -363,6 +378,47 @@ eval_echo() {
   1>&2 echo
 }
 
+eval_confirm() {
+	local okchar cmd
+
+  cmd="$@"
+  [ -z "$cmd" ] && return
+
+  echo
+  echo "the following command will be executed:"
+  echo
+  echo "$cmd"
+  echo
+  echo -n 'Is it ok? [Y/n]: '; read okchar
+
+  if [ "$okchar" = "n" ]; then
+    return
+  fi
+
+  eval "$cmd"
+}
+
+dbids() {
+	dbid=$(aws rds describe-db-instances --query "DBInstances[].[DBInstanceIdentifier]" --output text | peco)
+	echo dbid=$dbid
+}
+
+lsdb() {
+	aws rds describe-db-instances --query 'DBInstances[].[InstanceCreateTime, DBInstanceStatus, Engine, DBInstanceIdentifier, Endpoint.Address]' --output text | tr '\t' ',' | sort -t, -k3,3
+}
+
+lscls() {
+	aws rds describe-db-clusters --query 'DBClusters[].[ClusterCreateTime, Status, Engine, EngineVersion, DBClusterIdentifier]' --output text | tr '\t' ',' | sort -t, -k3,3
+}
+
+lspgs() {
+	aws rds describe-db-parameter-groups --query 'DBParameterGroups[].[DBParameterGroupFamily, DBParameterGroupName]' --output text | sort
+}
+
+lsclspgs() {
+	aws rds describe-db-cluster-parameter-groups --query 'DBClusterParameterGroups[].[DBParameterGroupFamily, DBClusterParameterGroupName]' --output text | sort
+}
+
 ddb() {
   dbst="$1"
 
@@ -394,20 +450,9 @@ rbdb() {
 }
 
 dpg() {
-  local okchar
-
-  if [ ! -z "$pg" ]; then
-    1>&2 echo -n "describe ${pg} [Y/n]: "; read okchar
-    if [ "$okchar" = "n" ]; then
-      unset pg
-    fi
-  fi
-
-  if [ -z "$pg" ]; then
-    pg=$(aws rds describe-db-parameter-groups --query "DBParameterGroups[].DBParameterGroupName" | jq -r '.[]' | peco)
-  fi
-
-  eval_echo -l aws rds describe-db-parameters --db-parameter-group-name "$pg"
+	pickpgname
+	[ -z "$pgname" ] && return
+  eval_echo -l aws rds describe-db-parameters --db-parameter-group-name "$pgname"
 }
 
 dclspg() {
@@ -421,7 +466,7 @@ dclspg() {
   fi
 
   if [ -z "$clspg" ]; then
-    clspg=$(aws rds describe-db-cluster-parameter-groups --query "DBClusterParameterGroups[].DBClusterParameterGroupName" | jq -r '.[]' | peco)
+    clspg=$(aws rds describe-db-cluster-parameter-groups --query "DBClusterParameterGroups[].[DBClusterParameterGroupName]" --output text | peco)
   fi
 
   eval_echo -l aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspg"
@@ -451,6 +496,31 @@ stopdb() {
   pickdbid available
   [ -z "$dbid" ] && return
   eval_echo aws rds stop-db-instance --db-instance-identifier "$dbid"
+}
+
+rmdb() {
+  pickdbid
+  [ -z "$dbid" ] && return
+	cmd=$(echo aws rds delete-db-instance --db-instance-identifier "$dbid" --skip-final-snapshot)
+	pgname=$(aws rds describe-db-parameter-groups --db-parameter-group-name "$dbid" --query 'DBParameterGroups[].[DBParameterGroupName]' --output text 2>/dev/null)
+	[ -n "$pgname" ] && cmd=$(echo $cmd '&&' aws rds delete-db-parameter-group --db-parameter-group-name "$pgname")
+	eval_confirm "$cmd"
+}
+
+rmcls() {
+	local dbids cmd
+	pickclsid
+  [ -z "$clsid" ] && return
+	dbids=$(aws rds describe-db-clusters --db-cluster-identifier "$clsid" --query "DBClusters[].DBClusterMembers[].[DBInstanceIdentifier]" --output text)
+  [ -n "$dbids" ] && while read x; do cmd=$(echo ${cmd:+$cmd &&} aws rds delete-db-instance --db-instance-identifier "$x" --skip-final-snapshot); done <<< $dbids
+	cmd=$(echo ${cmd:+$cmd &&} aws rds delete-db-cluster --db-cluster-identifier "$clsid" --skip-final-snapshot)
+	eval_confirm "$cmd"
+}
+
+rmpg() {
+	pickpgname
+  [ -z "$pgname" ] && return
+  eval_confirm aws rds delete-db-parameter-group --db-parameter-group-name "$pgname"
 }
 
 waitavailable() {
