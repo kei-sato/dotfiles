@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+USAGE='
+Example:
+  # convert date from admiral timestamp console
+  dateconv1 "2017-01-19 03:54" 10881h 03m
+'
+
+if [ $# -lt 3 ]; then echo "$USAGE"
+  exit
+fi
+
+d=${1}
+
+# remove 'h'
+h=${2%h}
+
+# remove 'm'
+m=${3%m}
+
+date -v +${h}H -v +${m}M -jf "%Y-%m-%d %H:%M" "$d" +"%Y-%m-%d %H:%M"

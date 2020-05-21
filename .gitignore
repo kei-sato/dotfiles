@@ -13,3 +13,9 @@ git/gitconfig.local.symlink
 gcp
 torch
 local
+
+bin/casegrep
+bin/hn
+bin/runci
+bin/sg-add-hnd
+bin/sg-add-iad
