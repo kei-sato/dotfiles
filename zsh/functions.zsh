@@ -197,16 +197,6 @@ function o() {
     fi;
 }
 
-# `s` with no arguments opens the current directory in Sublime Text, otherwise
-# opens the given location
-function s() {
-    if [ $# -eq 0 ]; then
-        subl .;
-    else
-        subl "$@";
-    fi;
-}
-
 # `tre` is a shorthand for `tree` with hidden files and color enabled, ignoring
 # the `.git` directory, listing directories first. The output gets piped into
 # `less` with options to preserve color and line numbers, unless the output is
