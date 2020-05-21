@@ -217,6 +217,7 @@ alias pbpo='pbpaste | xargs open'
 alias pbpx="pbpaste | tr '[[:alnum:]]' x"
 alias tless="tee /tmp/output | less"
 alias oless="less /tmp/output"
+alias lsfunc='declare -f | grep -- "()" | cut -d" " -f1 | grep -vE "^_"'
 
 # Curl
 alias curl='curl -sSL'
