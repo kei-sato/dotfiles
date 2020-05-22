@@ -470,20 +470,9 @@ rds-dpg() {
 alias dpg=rds-dpg
 
 rds-dclspg() {
-  local okchar
-
-  if [ ! -z "$clspg" ]; then
-    1>&2 echo -n "describe ${clspg} [Y/n]: "; read okchar
-    if [ "$okchar" = "n" ]; then
-      unset clspg
-    fi
-  fi
-
-  if [ -z "$clspg" ]; then
-    clspg=$(aws rds describe-db-cluster-parameter-groups --query "DBClusterParameterGroups[].[DBClusterParameterGroupName]" --output text | peco)
-  fi
-
-  eval_echo -l aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspg"
+	pickclspgname
+  [ -z "$clspgname" ] && return
+  eval_echo -l aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspgname"
 }
 alias dclspg=rds-dclspg
 
@@ -585,6 +574,40 @@ rds-mkclspg() {
 	eval_confirm aws rds create-db-cluster-parameter-group --db-cluster-parameter-group-name "$clspgname" --db-parameter-group-family "$pgfml" --description "$clspgname"
 }
 alias mkclspg=rds-mkclspg
+
+rds-modpg() {
+	local prm oldval newval cmd
+
+	pickpgname
+  [ -z "$pgname" ] && return
+	prm=$(aws rds describe-db-parameters --db-parameter-group-name "$pgname" --query "Parameters[?IsModifiable==\`true\`].[ParameterName]" --output text | peco)
+  [ -z "$prm" ] && return
+	oldval=$(aws rds describe-db-parameters --db-parameter-group-name "$pgname" --query "Parameters[?ParameterName==\`${prm}\`].[ParameterValue]" --output text)
+	echo "parameter : ${prm}"
+	echo "current value : ${oldval}"
+	echo -n 'new value : '; read newval
+  [ -z "$newval" ] && return
+	cmd=$(echo aws rds modify-db-parameter-group --db-parameter-group-name "$pgname" --parameters ParameterName="$prm",ParameterValue=\'\"${newval}\"\',ApplyMethod=immediate)
+	eval_confirm "$cmd"
+}
+alias modpg=rds-modpg
+
+rds-modclspg() {
+	local prm oldval newval cmd
+
+	pickclspgname
+  [ -z "$clspgname" ] && return
+	prm=$(aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspgname" --query "Parameters[?IsModifiable==\`true\`].[ParameterName]" --output text | peco)
+  [ -z "$prm" ] && return
+	oldval=$(aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspgname" --query "Parameters[?ParameterName==\`${prm}\`].[ParameterValue]" --output text)
+	echo "parameter : ${prm}"
+	echo "current value : ${oldval}"
+	echo -n 'new value : '; read newval
+  [ -z "$newval" ] && return
+	cmd=$(echo aws rds modify-db-cluster-parameter-group --db-cluster-parameter-group-name "$clspgname" --parameters ParameterName="$prm",ParameterValue=\'\"${newval}\"\',ApplyMethod=immediate)
+	eval_confirm "$cmd"
+}
+alias modclspg=rds-modclspg
 
 rds-rmpg() {
 	pickpgname
