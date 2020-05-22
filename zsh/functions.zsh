@@ -686,6 +686,7 @@ rds() {
 		echo "$cmds"
 		return
 	fi
+	eval "$@"
 }
 
 lesscli() {
