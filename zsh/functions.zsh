@@ -336,6 +336,21 @@ pickpgname() {
   fi
 }
 
+pickclspgname() {
+  local okchar
+
+  if [ ! -z "$clspgname" ]; then
+    1>&2 echo -n "describe ${clspgname} [Y/n]: "; read okchar
+    if [ "$okchar" = "n" ]; then
+      unset clspgname
+    fi
+  fi
+
+  if [ -z "$clspgname" ]; then
+    clspgname=$(aws rds describe-db-cluster-parameter-groups --query "DBClusterParameterGroups[].[DBClusterParameterGroupName]" --output text | peco)
+  fi
+}
+
 eval_echo() {
   local OPTIND option outless cmd tempfile
 
@@ -388,28 +403,33 @@ eval_confirm() {
   eval "$cmd"
 }
 
-dbids() {
+rds-dbids() {
 	dbid=$(aws rds describe-db-instances --query "DBInstances[].[DBInstanceIdentifier]" --output text | peco)
 	echo dbid=$dbid
 }
+alias dbids=rds-dbids
 
-lsdb() {
+rds-lsdb() {
 	aws rds describe-db-instances --query 'DBInstances[].[InstanceCreateTime, DBInstanceStatus, Engine, DBInstanceIdentifier, Endpoint.Address]' --output text | tr '\t' ',' | sort -t, -k3,3
 }
+alias lsdb=rds-lsdb
 
-lscls() {
+rds-lscls() {
 	aws rds describe-db-clusters --query 'DBClusters[].[ClusterCreateTime, Status, Engine, EngineVersion, DBClusterIdentifier]' --output text | tr '\t' ',' | sort -t, -k3,3
 }
+alias lscls=rds-lscls
 
-lspgs() {
+rds-lspgs() {
 	aws rds describe-db-parameter-groups --query 'DBParameterGroups[].[DBParameterGroupFamily, DBParameterGroupName]' --output text | sort
 }
+alias lspgs=rds-lspgs
 
-lsclspgs() {
+rds-lsclspgs() {
 	aws rds describe-db-cluster-parameter-groups --query 'DBClusterParameterGroups[].[DBParameterGroupFamily, DBClusterParameterGroupName]' --output text | sort
 }
+alias lsclspgs=rds-lsclspgs
 
-ddb() {
+rds-ddb() {
   dbst="$1"
 
   pickdbid "${dbst:+$dbst}"
@@ -418,8 +438,9 @@ ddb() {
 
   eval_echo -l aws rds describe-db-instances --db-instance-identifier "$dbid"
 }
+alias ddb=rds-ddb
 
-dcls() {
+rds-dcls() {
   clsst="$1"
 
   pickclsid "${clsst:+$clsst}"
@@ -428,8 +449,9 @@ dcls() {
 
   eval_echo -l aws rds describe-db-clusters --db-cluster-identifier "$clsid"
 }
+alias dcls=rds-dcls
 
-rbdb() {
+rds-rbdb() {
   dbst="$1"
 
   pickdbid "${dbst:+$dbst}"
@@ -438,14 +460,16 @@ rbdb() {
 
   eval_echo aws rds reboot-db-instance --db-instance-identifier "$dbid"
 }
+alias rbdb=rds-rbdb
 
-dpg() {
+rds-dpg() {
 	pickpgname
 	[ -z "$pgname" ] && return
   eval_echo -l aws rds describe-db-parameters --db-parameter-group-name "$pgname"
 }
+alias dpg=rds-dpg
 
-dclspg() {
+rds-dclspg() {
   local okchar
 
   if [ ! -z "$clspg" ]; then
@@ -461,34 +485,39 @@ dclspg() {
 
   eval_echo -l aws rds describe-db-cluster-parameters --db-cluster-parameter-group-name "$clspg"
 }
+alias dclspg=rds-dclspg
 
-starti() {
+rds-starti() {
   local iid
   aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name=="stopped") | [.LaunchTime, .InstanceId, (.Tags[]? | select(.Key=="Name").Value)] | @csv' | sort | peco | cut -d, -f2 | tr -d '"' | read iid
   [ -z "$iid" ] && return
   eval_echo aws ec2 start-instances --instance-ids "$iid"
 }
+alias starti=rds-starti
 
-stopi() {
+rds-stopi() {
   local iid
   aws ec2 describe-instances | jq -r '.Reservations[] | .Instances[] | select(.State.Name=="running") | [.LaunchTime, .InstanceId, (.Tags[]? | select(.Key=="Name").Value)] | @csv' | sort | peco | cut -d, -f2 | tr -d '"' | read iid
   [ -z "$iid" ] && return
   eval_echo aws ec2 stop-instances --instance-ids "$iid"
 }
+alias stopi=rds-stopi
 
-startdb() {
+rds-startdb() {
   pickdbid stopped
   [ -z "$dbid" ] && return
   eval_echo aws rds start-db-instance --db-instance-identifier "$dbid"
 }
+alias startdb=rds-startdb
 
-stopdb() {
+rds-stopdb() {
   pickdbid available
   [ -z "$dbid" ] && return
   eval_echo aws rds stop-db-instance --db-instance-identifier "$dbid"
 }
+alias stopdb=rds-stopdb
 
-rmdb() {
+rds-rmdb() {
   pickdbid
   [ -z "$dbid" ] && return
 	cmd=$(echo aws rds delete-db-instance --db-instance-identifier "$dbid" --skip-final-snapshot)
@@ -496,8 +525,9 @@ rmdb() {
 	[ -n "$pgname" ] && cmd=$(echo $cmd '&&' aws rds delete-db-parameter-group --db-parameter-group-name "$pgname")
 	eval_confirm "$cmd"
 }
+alias rmdb=rds-rmdb
 
-rmcls() {
+rds-rmcls() {
 	local dbids cmd
 	pickclsid
   [ -z "$clsid" ] && return
@@ -506,14 +536,71 @@ rmcls() {
 	cmd=$(echo ${cmd:+$cmd &&} aws rds delete-db-cluster --db-cluster-identifier "$clsid" --skip-final-snapshot)
 	eval_confirm "$cmd"
 }
+alias rmcls=rds-rmcls
 
-rmpg() {
+rds-mkpg() {
+  local okchar pgfml
+
+  if [ ! -z "$dbid" ]; then
+    1>&2 echo -n "use ${dbid} [Y/n]: "; read okchar
+    if [ "$okchar" != "n" ]; then
+      pgname="$dbid"
+    fi
+  fi
+
+  pgfml=$(aws rds describe-db-parameter-groups --query "DBParameterGroups[].[DBParameterGroupFamily]" --output text | sort | uniq | peco)
+
+  [ -z "$pgfml" ] && return
+
+	if [ -z "$pgname" ]; then
+		echo -n 'parameter group name: '; read pgname
+	fi
+
+  [ -z "$pgname" ] && return
+
+  eval_confirm aws rds create-db-parameter-group --db-parameter-group-name "$pgname" --db-parameter-group-family "$pgfml" --description "$pgname"
+}
+alias mkpg=rds-mkpg
+
+rds-mkclspg() {
+  local okchar pgfml
+
+  if [ ! -z "$dbid" ]; then
+    1>&2 echo -n "use ${dbid} [Y/n]: "; read okchar
+    if [ "$okchar" != "n" ]; then
+      clspgname="$dbid"
+    fi
+  fi
+
+  pgfml=$(aws rds describe-db-cluster-parameter-groups --query "DBClusterParameterGroups[].[DBParameterGroupFamily]" --output text | sort | uniq | peco)
+
+  [ -z "$pgfml" ] && return
+
+	if [ -z "$clspgname" ]; then
+		echo -n 'parameter group name: '; read clspgname
+	fi
+
+  [ -z "$clspgname" ] && return
+
+	eval_confirm aws rds create-db-cluster-parameter-group --db-cluster-parameter-group-name "$clspgname" --db-parameter-group-family "$pgfml" --description "$clspgname"
+}
+alias mkclspg=rds-mkclspg
+
+rds-rmpg() {
 	pickpgname
   [ -z "$pgname" ] && return
   eval_confirm aws rds delete-db-parameter-group --db-parameter-group-name "$pgname"
 }
+alias rmpg=rds-rmpg
 
-waitavailable() {
+rds-rmclspg() {
+	pickclspgname
+  [ -z "$clspgname" ] && return
+	eval_confirm aws rds delete-db-cluster-parameter-group --db-cluster-parameter-group-name "$clspgname"
+}
+alias rmclspg=rds-rmclspg
+
+rds-waitavailable() {
   pickdbid
   [ -z "$dbid" ] && return
 
@@ -522,8 +609,9 @@ waitavailable() {
   aws rds wait db-instance-available --db-instance-identifier "$dbid" && hey available $_ || hey failed $_
   echo finished: $(date "+%Y-%m-%d %H:%M:%S")
 }
+alias waitavailable=rds-waitavailable
 
-waitstopped() {
+rds-waitstopped() {
   pickdbid
   [ -z "$dbid" ] && return
   alias date2='date "+%Y-%m-%d %H:%M:%S"'
@@ -535,8 +623,9 @@ waitstopped() {
   echo "[$(date2)] $dbid is stopped"
   hey "$dbid is stopped"
 }
+alias waitstopped=rds-waitstopped
 
-lessdblog() {
+rds-lessdblog() {
   local fname fsize ftmp1 ftmp2
 
   pickdbid
@@ -562,6 +651,18 @@ lessdblog() {
 
   less "$ftmp1"
   echo "saved to $ftmp1"
+}
+alias lessdblog=rds-lessdblog
+
+rds() {
+	local cmds
+	cmds="$(declare -f | grep -- '()' | cut -d' ' -f1 | grep -vE '^_' | grep -- 'rds-' | perl -pne 's/rds-//')"
+	if [ -z "$1" -o $(echo "$cmds" | grep -E "^$1\$" | wc -l) -eq 0 ]; then
+		echo "Commnd '$1' was not found. Here are the available commands."
+		echo "------------------------"
+		echo "$cmds"
+		return
+	fi
 }
 
 lesscli() {
