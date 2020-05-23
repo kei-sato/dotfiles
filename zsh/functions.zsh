@@ -261,7 +261,13 @@ echop() {
 ################
 
 hey() {
-  which osascript &>/dev/null && osascript -e 'display alert "'"$*"'"'
+	ismac=false
+	[ $(uname -s) = "Darwin" ] && ismac=true
+	if $ismac; then
+		which osascript &>/dev/null && osascript -e 'display alert "'"$*"'"'
+	else
+		echo "$*"
+	fi
 }
 
 # convert unix time stamp to readable format
