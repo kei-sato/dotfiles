@@ -658,13 +658,3 @@ rds() {
 	fi
 	eval "$@"
 }
-
-lesscli() {
-  local dir fpath
-  dir="/usr/local/share/awscli/examples"
-  find "$dir" -type f | cut -c 34- | peco | read fpath
-
-  [ -z "$fpath" ] && return
-
-  less "${dir}/${fpath}"
-}
