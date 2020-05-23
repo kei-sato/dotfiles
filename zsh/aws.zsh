@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-# functions
+# rds command utility functions
 
 hey() {
 	ismac=false
@@ -646,7 +646,7 @@ rds-condb() {
 }
 alias condb=rds-condb
 
-
+# list available functions
 rds() {
 	local cmds
 	cmds="$(declare -f | grep -- '()' | cut -d' ' -f1 | grep -vE '^_' | grep -- 'rds-' | perl -pne 's/rds-//')"
