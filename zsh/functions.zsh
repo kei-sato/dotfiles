@@ -696,6 +696,234 @@ rds-lessdblog() {
 }
 alias lessdblog=rds-lessdblog
 
+
+rds-mkcls() {
+
+  local engine enver minorv inscls cstpgchar pgfml cmd1 cmd2 okchar
+
+  engine=$(for x in aurora aurora-mysql aurora-postgresql; do echo "$x"; done | peco)
+
+  [ -z "$engine" ] && return
+
+  # engine-version examples:
+  # 5.6.10a
+  # 5.6.mysql_aurora.1.19.0
+  # 5.7.12
+  # 5.7.mysql_aurora.2.03.2
+  # 9.6.9
+  # 10.6
+
+  enver=$(aws rds describe-db-engine-versions --filters "Name=engine,Values=$engine" --query "DBEngineVersions[].EngineVersion" | jq -r '.[]' | sort | uniq | peco)
+
+  [ -z "$enver" ] && return
+
+  if [ "$enver" = "5.6.10a" ]; then
+    echo -n 'engine-version [Default]: '; read minorv
+  fi
+
+  echo -n 'DB instance name: '; read dbid
+
+  if [ -z "$dbid" ]; then
+    echo "DB instance name is empty. abort"
+    return
+  fi
+
+  if [ "$engine" = "aurora-postgresql" ]; then
+    inscls="db.r5.large"
+  else
+    inscls="db.t3.small"
+  fi
+
+  echo -n 'new custom parameter group? [Y/n]: '; read cstpgchar
+
+  if [ "$cstpgchar" != "n" ]; then
+    pgfml=$(aws rds describe-db-engine-versions --engine $engine --engine-version $enver --query "DBEngineVersions[].[DBParameterGroupFamily]" --output text | head -n1)
+  fi
+
+  if [ -n "$pgfml" ]; then
+    cmd1=$(echo aws rds create-db-cluster-parameter-group --db-cluster-parameter-group-name "$dbid" --db-parameter-group-family "$pgfml" --description "$dbid")
+  fi
+
+  clsid="${dbid}-cluster"
+
+  cmd1=$(echo ${cmd1:+$cmd1 &&} aws rds create-db-cluster \
+    --db-cluster-identifier "$clsid" \
+    --engine "$engine" \
+    --engine-version "$enver" \
+    --database-name ${RDSCLI_DB_NAME} \
+    ${cmd1:+--db-cluster-parameter-group-name "$dbid"} \
+    --master-username "$RDSCLI_DB_USER" \
+    --master-user-password "$RDSCLI_DB_PASSWORD")
+
+  if [ -n "$pgfml" ]; then
+    cmd2=$(echo aws rds create-db-parameter-group --db-parameter-group-name "$dbid" --db-parameter-group-family "$pgfml" --description "$dbid")
+  fi
+
+  cmd2=$(echo ${cmd2:+$cmd2 &&} aws rds create-db-instance \
+    --db-instance-identifier "$dbid" \
+    --db-cluster-identifier "$clsid" \
+    --engine "$engine" \
+    ${minorv:+--engine-version "${enver}.${minorv}"} \
+    ${cmd2:+--db-parameter-group-name "$dbid"} \
+    --no-auto-minor-version-upgrade \
+    --publicly-accessible \
+    --db-instance-class "$inscls")
+
+  echo
+  echo "the following command will be executed:"
+  echo
+  echo "$cmd1"
+  echo
+  echo "$cmd2"
+  echo
+  echo -n 'Is it ok? [Y/n]: '; read okchar
+
+  if [ "$okchar" = "n" ]; then
+    return
+  fi
+
+  eval "$cmd1"
+  eval "$cmd2"
+}
+alias mkcls=rds-mkcls
+
+
+rds-mkdb() {
+
+# could be fetched with :
+# aws rds describe-db-parameter-groups --query "DBParameterGroups[?contains(DBParameterGroupName,\`default.\`)].DBParameterGroupFamily" | jq -r '.[]' | perl -ne 'if (/((sqlserver|oracle)-.*)-[\d\.]+/) { print "$1\n" } else { print "$1\n" if /(\D+)\d/ }' | grep -v aurora | sort | uniq
+  cat > /tmp/engines << EOF
+mariadb
+mysql
+oracle-ee
+oracle-se
+oracle-se1
+oracle-se2
+postgres
+sqlserver-ee
+sqlserver-ex
+sqlserver-se
+sqlserver-web
+EOF
+
+  local engine version cstpgchar pgfml mazchar maz saz cmd okchar defdb iclass
+
+  engine=$(peco < /tmp/engines)
+
+  [ -z "$engine" ] && return
+
+  version=$(aws rds describe-db-engine-versions --filters "Name=engine,Values=$engine" --query "DBEngineVersions[].EngineVersion" | jq -r '.[]' | peco)
+
+  [ -z "$version" ] && return
+
+  echo -n 'DB instance name: '; read dbid
+
+  if [ -z "$dbid" ]; then
+    echo "DB instance name is empty. abort"
+    return
+  fi
+
+  echo -n 'new custom parameter group? [Y/n]: '; read cstpgchar
+
+  if [ "$cstpgchar" != "n" ]; then
+    pgfml=$(aws rds describe-db-engine-versions --engine $engine --engine-version $version --query "DBEngineVersions[].DBParameterGroupFamily" --output text | head -n1)
+  fi
+
+  echo -n 'Multi-AZ [y/N]: '; read mazchar
+
+  if [ "$mazchar" = "y" ]; then
+    maz=1
+  else
+    saz=1
+  fi
+
+  [ "$engine" = "oracle-ee" ] && defdb=ORCL || defdb=${RDSCLI_DB_NAME}
+  [ "$engine" = "oracle-ee" ] && iclass=db.t3.medium || iclass=db.t3.small
+
+  if [ -n "$pgfml" ]; then
+    cmd=$(echo aws rds create-db-parameter-group --db-parameter-group-name "$dbid" --db-parameter-group-family "$pgfml" --description "$dbid")
+  fi
+
+  cmd=$(echo ${cmd:+$cmd &&} aws rds create-db-instance \
+    --db-instance-identifier "$dbid" \
+    --engine "$engine" \
+    --engine-version "$version" \
+    --db-instance-class "$iclass" \
+    --allocated-storage 20 \
+    --db-name "$defdb" \
+    --master-username "$RDSCLI_DB_USER" \
+    --master-user-password "$RDSCLI_DB_PASSWORD" \
+    ${maz:+ --multi-az} \
+    ${saz:+ --no-multi-az} \
+    ${cmd:+--db-parameter-group-name "$dbid"} \
+    --no-auto-minor-version-upgrade \
+    --publicly-accessible)
+
+  echo
+  echo "the following command will be executed:"
+  echo
+  echo "$cmd"
+  echo
+  echo -n 'Is it ok? [Y/n]: '; read okchar
+
+  if [ "$okchar" = "n" ]; then
+    return
+  fi
+
+  eval "$cmd"
+
+}
+alias mkdb=rds-mkdb
+
+
+
+# user/password must be defined as environment variables
+# export RDSCLI_DB_USER=username
+# export RDSCLI_DB_PASSWORD=password
+# export RDSCLI_DB_NAME=dbname
+#
+# make sure clients are available
+# which mysql psql sqlplus mssql-cli
+rds-condb() {
+  local engine endpoint dbname cmd
+
+  pickdbid "available"
+
+  [ -z "$dbid" ] && return
+
+  aws rds describe-db-instances --db-instance-identifier "$dbid" --query 'DBInstances[].[Engine,Endpoint.Address]' --output text 2>/dev/null | read -r engine endpoint
+
+  [ "$engine" = "None" -o "$endpoint" = "None" ] && return
+
+  case "$engine" in
+    "mariadb"|"mysql"|"aurora"|"aurora-mysql" )
+      # user/password are defined in ~/.my.cnf
+      cmd="mysql -h ${endpoint} ${RDSCLI_DB_NAME}"
+      ;;
+    "oracle-ee"|"oracle-se"|"oracle-se1"|"oracle-se2" )
+      cmd="sqlplus ${RDSCLI_DB_USER}/${RDSCLI_DB_PASSWORD}@${endpoint}/ORCL"
+      ;;
+    "postgres"|"aurora-postgresql" )
+      # user/password are defined in ~/.pgpass
+      cmd="psql -h ${endpoint} -U ${RDSCLI_DB_USER} ${RDSCLI_DB_NAME}"
+      ;;
+    "sqlserver-ee"|"sqlserver-ex"|"sqlserver-se"|"sqlserver-web" )
+      # password is defined as environment variable MSSQL_CLI_PASSWORD
+      cmd="mssql-cli -d ${RDSCLI_DB_NAME} -U ${RDSCLI_DB_USER} -S ${endpoint}"
+      ;;
+    * )
+      echo "unknown engine: $engine"
+      ;;
+  esac
+
+  [ -z "$cmd" ] && return
+  echo "$cmd"
+  echo
+  eval "$cmd"
+}
+alias condb=rds-condb
+
+
 rds() {
 	local cmds
 	cmds="$(declare -f | grep -- '()' | cut -d' ' -f1 | grep -vE '^_' | grep -- 'rds-' | perl -pne 's/rds-//')"
@@ -717,4 +945,3 @@ lesscli() {
 
   less "${dir}/${fpath}"
 }
-
