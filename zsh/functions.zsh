@@ -325,7 +325,7 @@ pickpgname() {
   local okchar
 
   if [ ! -z "$pgname" ]; then
-    1>&2 echo -n "describe ${pgname} [Y/n]: "; read okchar
+    1>&2 echo -n "use ${pgname} [Y/n]: "; read okchar
     if [ "$okchar" = "n" ]; then
       unset pgname
     fi
@@ -340,7 +340,7 @@ pickclspgname() {
   local okchar
 
   if [ ! -z "$clspgname" ]; then
-    1>&2 echo -n "describe ${clspgname} [Y/n]: "; read okchar
+    1>&2 echo -n "use ${clspgname} [Y/n]: "; read okchar
     if [ "$okchar" = "n" ]; then
       unset clspgname
     fi
@@ -408,6 +408,12 @@ rds-dbids() {
 	echo dbid=$dbid
 }
 alias dbids=rds-dbids
+
+rds-clsids() {
+	clsid=$(aws rds describe-db-clusters --query "DBClusters[].[DBClusterIdentifier]" --output text | peco)
+	echo clsid=$clsid
+}
+alias clsids=rds-clsids
 
 rds-lsdb() {
 	aws rds describe-db-instances --query 'DBInstances[].[InstanceCreateTime, DBInstanceStatus, Engine, DBInstanceIdentifier, Endpoint.Address]' --output text | tr '\t' ',' | sort -t, -k3,3
@@ -507,22 +513,35 @@ rds-stopdb() {
 alias stopdb=rds-stopdb
 
 rds-rmdb() {
+	local cmd
   pickdbid
   [ -z "$dbid" ] && return
 	cmd=$(echo aws rds delete-db-instance --db-instance-identifier "$dbid" --skip-final-snapshot)
 	pgname=$(aws rds describe-db-parameter-groups --db-parameter-group-name "$dbid" --query 'DBParameterGroups[].[DBParameterGroupName]' --output text 2>/dev/null)
-	[ -n "$pgname" ] && cmd=$(echo $cmd '&&' aws rds delete-db-parameter-group --db-parameter-group-name "$pgname")
+	[ -n "$pgname" ] && cmd=$(echo $cmd '&&' aws rds 'wait' db-instance-deleted --db-instance-identifier "$dbid" '&&' aws rds delete-db-parameter-group --db-parameter-group-name "$pgname")
 	eval_confirm "$cmd"
 }
 alias rmdb=rds-rmdb
 
 rds-rmcls() {
-	local dbids cmd
+	local dbids clspgname pgname cmd
+
 	pickclsid
   [ -z "$clsid" ] && return
+
+	dbid=${clsid%%-cluster}
 	dbids=$(aws rds describe-db-clusters --db-cluster-identifier "$clsid" --query "DBClusters[].DBClusterMembers[].[DBInstanceIdentifier]" --output text)
   [ -n "$dbids" ] && while read x; do cmd=$(echo ${cmd:+$cmd &&} aws rds delete-db-instance --db-instance-identifier "$x" --skip-final-snapshot); done <<< $dbids
+
+	pgname=$(aws rds describe-db-parameter-groups --db-parameter-group-name "$dbid" --query 'DBParameterGroups[].[DBParameterGroupName]' --output text 2>/dev/null)
+	[ -n "$pgname" ] && cmd=$(echo $cmd '&&' aws rds 'wait' db-instance-deleted --db-instance-identifier "$dbid" '&&' aws rds delete-db-parameter-group --db-parameter-group-name "$pgname")
+
 	cmd=$(echo ${cmd:+$cmd &&} aws rds delete-db-cluster --db-cluster-identifier "$clsid" --skip-final-snapshot)
+
+	clspgname=$(aws rds describe-db-cluster-parameter-groups --db-cluster-parameter-group-name "$dbid" --query 'DBClusterParameterGroups[].[DBClusterParameterGroupName]' --output text 2>/dev/null)
+	# "aws rds wait db-cluster-deleted" doesn't exist at the moment. So, it does sleep a while.
+	[ -n "$clspgname" ] && cmd=$(echo $cmd '&&' sleep 60 '&&' aws rds delete-db-cluster-parameter-group --db-cluster-parameter-group-name "$clspgname")
+
 	eval_confirm "$cmd"
 }
 alias rmcls=rds-rmcls
