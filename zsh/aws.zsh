@@ -13,7 +13,7 @@ hey() {
 }
 
 pickdbid() {
-  local okchar dbst
+  local okchar stfilter dbstatus
 
   if [ ! -z "$dbid" ]; then
     1>&2 echo -n "use ${dbid} [Y/n]: "; read okchar
@@ -23,13 +23,13 @@ pickdbid() {
   fi
 
   if [ -z "$dbid" ]; then
-    dbst="$1"
-    dbid=$(aws rds describe-db-instances --query "DBInstances[${dbst:+?DBInstanceStatus==\`$dbst\`}].[DBInstanceIdentifier]" --output text | peco)
+    stfilter="$1"
+    aws rds describe-db-instances --query "DBInstances[${stfilter:+?DBInstanceStatus==\`$dbst\`}].[DBInstanceStatus,DBInstanceIdentifier]" --output text | sort | peco | read -r dbstatus dbid
   fi
 }
 
 pickclsid() {
-  local okchar clsst
+  local okchar stfilter clsstatus
 
   if [ ! -z "$clsid" ]; then
     1>&2 echo -n "use ${clsid} [Y/n]: "; read okchar
@@ -39,8 +39,8 @@ pickclsid() {
   fi
 
   if [ -z "$clsid" ]; then
-    clsst="$1"
-    clsid=$(aws rds describe-db-clusters --query "DBClusters[${clsst:+?Status==\`$clsst\`}].[DBClusterIdentifier]" --output text | peco)
+    stfilter="$1"
+    aws rds describe-db-clusters --query "DBClusters[${stfilter:+?Status==\`$stfilter\`}].[Status,DBClusterIdentifier]" --output text | sort | peco | read -r clsstatus clsid
   fi
 }
 
@@ -127,13 +127,13 @@ eval_confirm() {
 }
 
 rds-dbids() {
-	dbid=$(aws rds describe-db-instances --query "DBInstances[].[DBInstanceIdentifier]" --output text | peco)
+	pickdbid
 	echo dbid=$dbid
 }
 alias dbids=rds-dbids
 
 rds-clsids() {
-	clsid=$(aws rds describe-db-clusters --query "DBClusters[].[DBClusterIdentifier]" --output text | peco)
+	pickclsid
 	echo clsid=$clsid
 }
 alias clsids=rds-clsids
@@ -610,7 +610,7 @@ alias mkdb=rds-mkdb
 rds-condb() {
   local engine endpoint dbname cmd
 
-  pickdbid "available"
+  pickdbid
 
   [ -z "$dbid" ] && return
 
