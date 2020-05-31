@@ -38,6 +38,7 @@
     invisibles: {}
     preferredLineLength: 200
     showIndentGuide: true
+    showInvisibles: true
     softWrap: true
   "find-and-replace":
     scrollToResultOnLiveSearch: true
