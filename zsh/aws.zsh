@@ -624,12 +624,12 @@ rds-moddb() {
 
 		[ -z "$prop" ] && break
 
-	  case "$prop" in
-	    ApplyImmediately)
+		case "$prop" in
+			ApplyImmediately)
 				echo -n 'immediately? [Y/n]: '; read tempchar
 				[ "$tempchar" = "n" ] && noimmediate=true
 				;;
-	    *)
+			*)
 				oldval=$(jq -r ".${prop}" "$foldvals")
 				echo "setting : ${prop}"
 				echo "current value : ${oldval}"
@@ -637,7 +637,7 @@ rds-moddb() {
 				cmdopt=$(echo -n "-${prop}" | perl -pne 's/([A-Z])/"-".lc($1)/ge')
 				[ -n "$newval" ] && cmd="$cmd \\"$'\n'"${cmdopt} ${newval}"
 				;;
-	  esac
+		esac
 
 		echo -n 'more? [Y/n]: '; read morechar
 	done
