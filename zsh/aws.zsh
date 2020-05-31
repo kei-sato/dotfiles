@@ -598,6 +598,56 @@ EOF
 }
 alias mkdb=rds-mkdb
 
+rds-moddb() {
+	local cmd cmdopt fprops foldvals oldval newval morechar tempchar noimmediate optimmediate
+
+	pickdbid
+
+  [ -z "$dbid" ] && return
+
+	# https://docs.aws.amazon.com/cli/latest/reference/rds/modify-db-instance.html
+	# $ aws rds modify-db-instance --db-instance-identifier foo --generate-cli-skeleton input
+	# $ aws rds modify-db-instance --db-instance-identifier foo --generate-cli-skeleton input | jq -r 'keys | .[]'
+	# to insert a property into json with jq https://gist.github.com/joar/776b7d176196592ed5d8
+	# echo -n -ApplyImmediately | perl -pne 's/([A-Z])/"-".lc($1)/ge'
+
+	fprops=$(mktemp)
+	aws rds modify-db-instance --db-instance-identifier foo --generate-cli-skeleton input | jq -r 'keys | .[]' > "$fprops"
+
+	foldvals=$(mktemp)
+  aws rds describe-db-instances --db-instance-identifier "$dbid" --query 'DBInstances[0]' > "$foldvals"
+
+	cmd="aws rds modify-db-instance --db-instance-identifier ${dbid}"
+
+	while [ "$morechar" != "n" ]; do
+		prop=$(peco < "$fprops")
+
+		[ -z "$prop" ] && break
+
+	  case "$prop" in
+	    ApplyImmediately)
+				echo -n 'immediately? [Y/n]: '; read tempchar
+				[ "$tempchar" = "n" ] && noimmediate=true
+				;;
+	    *)
+				oldval=$(jq -r ".${prop}" "$foldvals")
+				echo "setting : ${prop}"
+				echo "current value : ${oldval}"
+				echo -n 'new value : '; read newval
+				cmdopt=$(echo -n "-${prop}" | perl -pne 's/([A-Z])/"-".lc($1)/ge')
+				[ -n "$newval" ] && cmd="$cmd \\"$'\n'"${cmdopt} ${newval}"
+				;;
+	  esac
+
+		echo -n 'more? [Y/n]: '; read morechar
+	done
+
+	optimmediate=$($noimmediate && echo "--no-apply-immediately" || echo "--apply-immediately")
+	cmd="$cmd \\"$'\n'"$optimmediate"
+
+	eval_confirm "$cmd"
+}
+alias moddb=rds-moddb
 
 
 # user/password must be defined as environment variables
