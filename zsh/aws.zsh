@@ -599,7 +599,7 @@ EOF
 alias mkdb=rds-mkdb
 
 rds-moddb() {
-	local cmd cmdopt fprops foldvals oldval newval morechar tempchar noimmediate optimmediate
+	local cmd cmdopt fprops foldvals oldval newval morechar tempchar noimmediate optimmediate pgfml
 
 	pickdbid
 
@@ -627,14 +627,47 @@ rds-moddb() {
 		case "$prop" in
 			ApplyImmediately)
 				echo -n 'immediately? [Y/n]: '; read tempchar
-				[ "$tempchar" = "n" ] && noimmediate=true
+				[ "$tempchar" = "n" ] && noimmediate="true"
+				;;
+			DBParameterGroupName)
+				oldval=$(jq -r ".DBParameterGroups[0].DBParameterGroupName" "$foldvals")
+				echo "setting : ${prop}"
+				echo "current value : ${oldval}"
+				pgfml=$(aws rds describe-db-parameter-groups --query "DBParameterGroups[?DBParameterGroupName==\`${oldval}\`].[DBParameterGroupFamily]" --output text)
+				newval=$(aws rds describe-db-parameter-groups --query "DBParameterGroups[?DBParameterGroupFamily==\`${pgfml}\`].[DBParameterGroupName]" --output text | peco)
+				[ -n "$newval" ] && {
+					echo "new value : ${newval}"
+					cmd="$cmd \\"$'\n'"--db-parameter-group-name ${newval}"
+				}
+				;;
+			MultiAZ|PubliclyAccessible|AutoMinorVersionUpgrade|UseDefaultProcessorFeatures|CertificateRotationRestart|DeletionProtection)
+				oldval=$(jq -r ".${prop}" "$foldvals")
+				echo "setting : ${prop}"
+				echo "current value : ${oldval}"
+				echo -n 'new value : '; read newval
+				[ -n "$newval" ] && {
+					cmdopt=$(echo -n "-${prop}" | sed -e -e 's/AZ/Az/' | perl -pne 's/([A-Z])/"-".lc($1)/ge')
+					[ "$newval" = "false" ] && cmdopt=$(echo "$cmdopt" | sed -e 's/^--/--no-/')
+					cmd="$cmd \\"$'\n'"${cmdopt}"
+				}
+				;;
+			EnableIAMDatabaseAuthentication|EnablePerformanceInsights)
+				oldval=$(jq -r ".${prop/Enable/}Enabled" "$foldvals")
+				echo "setting : ${prop}"
+				echo "current value : ${oldval}"
+				echo -n 'new value : '; read newval
+				[ -n "$newval" ] && {
+					cmdopt=$(echo -n "-${prop}" | sed -e 's/IAM/Iam/' | perl -pne 's/([A-Z])/"-".lc($1)/ge')
+					[ "$newval" = "false" ] && cmdopt=$(echo "$cmdopt" | sed -e 's/^--/--no-/')
+					cmd="$cmd \\"$'\n'"${cmdopt}"
+				}
 				;;
 			*)
 				oldval=$(jq -r ".${prop}" "$foldvals")
 				echo "setting : ${prop}"
 				echo "current value : ${oldval}"
 				echo -n 'new value : '; read newval
-				cmdopt=$(echo -n "-${prop}" | perl -pne 's/([A-Z])/"-".lc($1)/ge')
+				cmdopt=$(echo -n "-${prop}" | sed -e 's/CA/Ca/' -e 's/DB/Db/' -e 's/IAM/Iam/' -e 's/AZ/Az/' -e 's/KMS/Kms/' | perl -pne 's/([A-Z])/"-".lc($1)/ge')
 				[ -n "$newval" ] && cmd="$cmd \\"$'\n'"${cmdopt} ${newval}"
 				;;
 		esac
@@ -642,7 +675,7 @@ rds-moddb() {
 		echo -n 'more? [Y/n]: '; read morechar
 	done
 
-	optimmediate=$($noimmediate && echo "--no-apply-immediately" || echo "--apply-immediately")
+	optimmediate=$([ "$noimmediate" = "true" ] && echo "--no-apply-immediately" || echo "--apply-immediately")
 	cmd="$cmd \\"$'\n'"$optimmediate"
 
 	eval_confirm "$cmd"
