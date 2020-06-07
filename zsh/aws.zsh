@@ -637,18 +637,24 @@ rds-moddb() {
 				newval=$(aws rds describe-db-parameter-groups --query "DBParameterGroups[?DBParameterGroupFamily==\`${pgfml}\`].[DBParameterGroupName]" --output text | peco)
 				[ -n "$newval" ] && {
 					echo "new value : ${newval}"
-					cmd="$cmd \\"$'\n'"--db-parameter-group-name ${newval}"
+					cmd="$cmd --db-parameter-group-name ${newval}"
 				}
 				;;
-			MultiAZ|PubliclyAccessible|AutoMinorVersionUpgrade|UseDefaultProcessorFeatures|CertificateRotationRestart|DeletionProtection)
+			AllowMajorVersionUpgrade|CertificateRotationRestart|UseDefaultProcessorFeatures)
+				echo -n "${prop} true? [Y/n]: "; read tempchar
+				cmdopt=$(echo -n "-${prop}" | sed -e 's/AZ/Az/' | perl -pne 's/([A-Z])/"-".lc($1)/ge')
+				[ "$tempchar" = "n" ] && cmdopt=$(echo "$cmdopt" | sed -e 's/^--/--no-/')
+				cmd="$cmd ${cmdopt}"
+				;;
+			MultiAZ|PubliclyAccessible|AutoMinorVersionUpgrade|DeletionProtection)
 				oldval=$(jq -r ".${prop}" "$foldvals")
 				echo "setting : ${prop}"
 				echo "current value : ${oldval}"
 				echo -n 'new value : '; read newval
 				[ -n "$newval" ] && {
-					cmdopt=$(echo -n "-${prop}" | sed -e -e 's/AZ/Az/' | perl -pne 's/([A-Z])/"-".lc($1)/ge')
+					cmdopt=$(echo -n "-${prop}" | sed -e 's/AZ/Az/' | perl -pne 's/([A-Z])/"-".lc($1)/ge')
 					[ "$newval" = "false" ] && cmdopt=$(echo "$cmdopt" | sed -e 's/^--/--no-/')
-					cmd="$cmd \\"$'\n'"${cmdopt}"
+					cmd="$cmd ${cmdopt}"
 				}
 				;;
 			EnableIAMDatabaseAuthentication|EnablePerformanceInsights)
@@ -659,7 +665,7 @@ rds-moddb() {
 				[ -n "$newval" ] && {
 					cmdopt=$(echo -n "-${prop}" | sed -e 's/IAM/Iam/' | perl -pne 's/([A-Z])/"-".lc($1)/ge')
 					[ "$newval" = "false" ] && cmdopt=$(echo "$cmdopt" | sed -e 's/^--/--no-/')
-					cmd="$cmd \\"$'\n'"${cmdopt}"
+					cmd="$cmd ${cmdopt}"
 				}
 				;;
 			*)
@@ -668,7 +674,7 @@ rds-moddb() {
 				echo "current value : ${oldval}"
 				echo -n 'new value : '; read newval
 				cmdopt=$(echo -n "-${prop}" | sed -e 's/CA/Ca/' -e 's/DB/Db/' -e 's/IAM/Iam/' -e 's/AZ/Az/' -e 's/KMS/Kms/' | perl -pne 's/([A-Z])/"-".lc($1)/ge')
-				[ -n "$newval" ] && cmd="$cmd \\"$'\n'"${cmdopt} ${newval}"
+				[ -n "$newval" ] && cmd="$cmd ${cmdopt} ${newval}"
 				;;
 		esac
 
@@ -676,7 +682,8 @@ rds-moddb() {
 	done
 
 	optimmediate=$([ "$noimmediate" = "true" ] && echo "--no-apply-immediately" || echo "--apply-immediately")
-	cmd="$cmd \\"$'\n'"$optimmediate"
+	cmd="$cmd $optimmediate"
+	# cmd="$cmd \\"$'\n'"$optimmediate"
 
 	eval_confirm "$cmd"
 }
